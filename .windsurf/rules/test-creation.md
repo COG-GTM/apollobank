@@ -18,7 +18,3 @@ description: When writing or modifying tests in this codebase
 - Follow the Arrange-Act-Assert (AAA) pattern
 - Use descriptive test names that explain the expected behavior
 - Group related tests using `describe` blocks
-
-## Running Tests
-- Client: `npm test` (in client directory)
-- Server: `npm test` or `npm run test:watch` (in server directory)
