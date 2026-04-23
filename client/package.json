@@ -46,6 +46,16 @@
         "eject": "react-scripts eject",
         "gen": "graphql-codegen --config codegen.yml"
     },
+    "jest": {
+        "collectCoverageFrom": [
+            "src/**/*.{ts,tsx}",
+            "!src/generated/**",
+            "!src/**/*.style.ts",
+            "!src/index.tsx",
+            "!src/react-app-env.d.ts",
+            "!src/setupTests.ts"
+        ]
+    },
     "eslintConfig": {
         "extends": "react-app"
     },
