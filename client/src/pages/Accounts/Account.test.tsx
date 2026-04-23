@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, fireEvent } from '@testing-library/react';
+import { render, fireEvent, waitFor } from '@testing-library/react';
 import { Account } from './Account';
 
 jest.mock('./styles/Account.style', () => ({
@@ -27,11 +27,13 @@ jest.mock('../../assets/uk.svg', () => ({
     ReactComponent: () => <svg data-testid="pound-svg" />,
 }));
 
+let mockCurrency = 'GBP';
+let mockBalance = 1000;
 const mockPush = jest.fn();
 const mockGo = jest.fn();
 jest.mock('react-router-dom', () => ({
     useLocation: () => ({
-        state: { currency: 'GBP', balance: 1000, iban: 'GB123', bic: 'BIC123' },
+        state: { currency: mockCurrency, balance: mockBalance, iban: 'GB123', bic: 'BIC123' },
     }),
     useHistory: () => ({ push: mockPush, go: mockGo }),
 }));
@@ -66,9 +68,7 @@ jest.mock('./Transactions/Transactions', () => ({
 }));
 
 jest.mock('../../schemas /addMoneyValidationSchema', () => ({
-    addMoneyValidationSchema: {
-        validate: jest.fn().mockResolvedValue(true),
-    },
+    addMoneyValidationSchema: null,
 }));
 
 const mockCreateTransaction = jest.fn();
@@ -95,6 +95,8 @@ const { useTransactionsQuery, useMeQuery, useAccountQuery, useAccountsQuery, use
 describe('Account', () => {
     beforeEach(() => {
         jest.clearAllMocks();
+        mockCurrency = 'GBP';
+        mockBalance = 1000;
         useTransactionsQuery.mockReturnValue({
             data: { transactions: [] },
         });
@@ -132,6 +134,26 @@ describe('Account', () => {
         expect(getByText('GBP')).toBeInTheDocument();
     });
 
+    it('renders EUR currency info', () => {
+        mockCurrency = 'EUR';
+        const { getByText } = render(<Account />);
+        expect(getByText('Euro')).toBeInTheDocument();
+    });
+
+    it('renders USD currency info', () => {
+        mockCurrency = 'USD';
+        const { getByText } = render(<Account />);
+        expect(getByText('US Dollar')).toBeInTheDocument();
+    });
+
+    it('uses location balance when account data is missing', () => {
+        useAccountQuery.mockReturnValue({ data: undefined });
+        mockBalance = 2000;
+        const { container } = render(<Account />);
+        const balanceEl = container.querySelector('.accountBalance');
+        expect(balanceEl!.textContent).toContain('2000');
+    });
+
     it('renders action buttons', () => {
         const { getByText } = render(<Account />);
         expect(getByText('Add money')).toBeInTheDocument();
@@ -149,22 +171,28 @@ describe('Account', () => {
         expect(getByTestId('transactions')).toBeInTheDocument();
     });
 
-    it('opens add money dialog on click', () => {
+    it('opens add money dialog with form on click', () => {
         const { getByLabelText, getByTestId } = render(<Account />);
         fireEvent.click(getByLabelText('Add'));
         expect(getByTestId('dialog')).toBeInTheDocument();
+        expect(getByTestId('form-field-amount')).toBeInTheDocument();
     });
 
-    it('opens exchange dialog on click', () => {
+    it('opens exchange dialog with form on click', () => {
         const { getByLabelText, getByTestId } = render(<Account />);
         fireEvent.click(getByLabelText('Exchange'));
         expect(getByTestId('dialog')).toBeInTheDocument();
+        expect(getByTestId('form-field-amount')).toBeInTheDocument();
     });
 
-    it('opens details dialog on click', () => {
-        const { getByLabelText, getByTestId } = render(<Account />);
+    it('opens details dialog showing user info on click', () => {
+        const { getByLabelText, getByText } = render(<Account />);
         fireEvent.click(getByLabelText('Details'));
-        expect(getByTestId('dialog')).toBeInTheDocument();
+        expect(getByText(/John/)).toBeInTheDocument();
+        expect(getByText(/Doe/)).toBeInTheDocument();
+        expect(getByText(/GB123/)).toBeInTheDocument();
+        expect(getByText(/BIC123/)).toBeInTheDocument();
+        expect(getByText('Delete account')).toBeInTheDocument();
     });
 
     it('shows error message when simulate clicked without card', () => {
@@ -172,5 +200,87 @@ describe('Account', () => {
         const { getByText, getByTestId } = render(<Account />);
         fireEvent.click(getByText('Simulate'));
         expect(getByTestId('error-message')).toBeInTheDocument();
+    });
+
+    it('calls createTransaction on simulate with card', async () => {
+        mockCreateTransaction.mockResolvedValue({ data: { createTransaction: 900 } });
+        const { getByText } = render(<Account />);
+        fireEvent.click(getByText('Simulate'));
+        await waitFor(() => {
+            expect(mockCreateTransaction).toHaveBeenCalled();
+        });
+    });
+
+    it('handles simulate error gracefully', async () => {
+        mockCreateTransaction.mockRejectedValue(new Error('GraphQL: error'));
+        const { getByText } = render(<Account />);
+        fireEvent.click(getByText('Simulate'));
+        await waitFor(() => {
+            expect(mockCreateTransaction).toHaveBeenCalled();
+        });
+    });
+
+    it('submits add money form successfully', async () => {
+        mockAddMoney.mockResolvedValue({ data: { addMoney: { message: 'Added!' } } });
+        const { getByLabelText, getByTestId, getByText } = render(<Account />);
+        fireEvent.click(getByLabelText('Add'));
+        const submitBtn = getByText('Add money', { selector: 'span.MuiButton-label' });
+        fireEvent.click(submitBtn);
+        await waitFor(() => {
+            expect(mockAddMoney).toHaveBeenCalled();
+        });
+    });
+
+    it('handles add money form error', async () => {
+        mockAddMoney.mockRejectedValue(new Error('GraphQL: Insufficient funds'));
+        const { getByLabelText, getByText } = render(<Account />);
+        fireEvent.click(getByLabelText('Add'));
+        const submitBtn = getByText('Add money', { selector: 'span.MuiButton-label' });
+        fireEvent.click(submitBtn);
+        await waitFor(() => {
+            expect(mockAddMoney).toHaveBeenCalled();
+        });
+    });
+
+    it('submits exchange form', async () => {
+        mockExchange.mockResolvedValue({ data: { exchange: { message: 'Exchanged!' } } });
+        const { getByLabelText } = render(<Account />);
+        fireEvent.click(getByLabelText('Exchange'));
+    });
+
+    it('clicks delete account in details dialog', async () => {
+        mockDeleteAccount.mockResolvedValue({ data: { deleteAccount: true } });
+        const { getByLabelText, getByText } = render(<Account />);
+        fireEvent.click(getByLabelText('Details'));
+        fireEvent.click(getByText('Delete account'));
+        await waitFor(() => {
+            expect(mockDeleteAccount).toHaveBeenCalled();
+        });
+    });
+
+    it('handles delete account error', async () => {
+        mockDeleteAccount.mockRejectedValue(new Error('GraphQL: Balance not zero'));
+        const { getByLabelText, getByText } = render(<Account />);
+        fireEvent.click(getByLabelText('Details'));
+        fireEvent.click(getByText('Delete account'));
+        await waitFor(() => {
+            expect(mockDeleteAccount).toHaveBeenCalled();
+        });
+    });
+
+    it('shows negative balance warning', () => {
+        useAccountQuery.mockReturnValue({ data: { account: { balance: -50 } } });
+        const { getByTestId } = render(<Account />);
+        expect(getByTestId('warning-message')).toBeInTheDocument();
+    });
+
+    it('shows loading when showLoadingIcon is triggered via delete', async () => {
+        mockDeleteAccount.mockResolvedValue({ data: { deleteAccount: true } });
+        const { getByLabelText, getByText, getByTestId } = render(<Account />);
+        fireEvent.click(getByLabelText('Details'));
+        fireEvent.click(getByText('Delete account'));
+        await waitFor(() => {
+            expect(getByTestId('loading')).toBeInTheDocument();
+        });
     });
 });

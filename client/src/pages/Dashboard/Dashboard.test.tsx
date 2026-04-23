@@ -185,4 +185,77 @@ describe('Dashboard', () => {
         const { getByText } = render(<Dashboard />);
         expect(getByText(/Total balance/)).toBeInTheDocument();
     });
+
+    it('opens create account dialog when no accounts card clicked', () => {
+        useAccountsQuery.mockReturnValue({
+            data: { accounts: [] },
+            loading: false,
+        });
+        const { getByTestId } = render(<Dashboard />);
+        fireEvent.click(getByTestId('no-accounts-card'));
+        expect(getByTestId('dialog')).toBeInTheDocument();
+    });
+
+    it('renders currency list in create account dialog', () => {
+        useAccountsQuery.mockReturnValue({
+            data: { accounts: [] },
+            loading: false,
+        });
+        const { getByTestId } = render(<Dashboard />);
+        fireEvent.click(getByTestId('no-accounts-card'));
+        const dialog = getByTestId('dialog');
+        expect(dialog.textContent).toContain('EUR');
+        expect(dialog.textContent).toContain('USD');
+        expect(dialog.textContent).toContain('GBP');
+    });
+
+    it('calls createCard mutation when no apollo card clicked', async () => {
+        mockCreateCard.mockResolvedValue({ data: { createCard: { id: '1' } } });
+        useAccountsQuery.mockReturnValue({
+            data: { accounts: [] },
+            loading: false,
+        });
+        useCardsQuery.mockReturnValue({ data: { cards: [] } });
+        const { getByTestId } = render(<Dashboard />);
+        fireEvent.click(getByTestId('no-apollo-card'));
+        await waitFor(() => {
+            expect(mockCreateCard).toHaveBeenCalled();
+        });
+    });
+
+    it('handles createCard error', async () => {
+        mockCreateCard.mockRejectedValue(new Error('GraphQL: Card error'));
+        useAccountsQuery.mockReturnValue({
+            data: { accounts: [] },
+            loading: false,
+        });
+        useCardsQuery.mockReturnValue({ data: { cards: [] } });
+        const { getByTestId } = render(<Dashboard />);
+        fireEvent.click(getByTestId('no-apollo-card'));
+        await waitFor(() => {
+            expect(mockCreateCard).toHaveBeenCalled();
+        });
+    });
+
+    it('renders chart options select when accounts exist', () => {
+        useAccountsQuery.mockReturnValue({
+            data: {
+                accounts: [{ id: '1', currency: 'GBP', balance: 1000, iban: 'GB123' }],
+            },
+            loading: false,
+        });
+        const { getByLabelText } = render(<Dashboard />);
+        expect(getByLabelText('Account')).toBeInTheDocument();
+    });
+
+    it('renders EUR account with euro icon', () => {
+        useAccountsQuery.mockReturnValue({
+            data: {
+                accounts: [{ id: '1', currency: 'EUR', balance: 500, iban: 'EU123' }],
+            },
+            loading: false,
+        });
+        const { getByText } = render(<Dashboard />);
+        expect(getByText('€500')).toBeInTheDocument();
+    });
 });

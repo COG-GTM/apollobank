@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, fireEvent } from '@testing-library/react';
+import { render, fireEvent, waitFor } from '@testing-library/react';
 import { Settings } from './Settings';
 
 jest.mock('../../assets/world.svg', () => ({
@@ -59,9 +59,7 @@ jest.mock('../../utils/accessToken', () => ({
 }));
 
 jest.mock('../../schemas /changePasswordValidationSchema', () => ({
-    changePasswordValidationSchema: {
-        validate: jest.fn().mockResolvedValue(true),
-    },
+    changePasswordValidationSchema: null,
 }));
 
 const { useMeQuery, useAccountsQuery } = require('../../generated/graphql');
@@ -123,27 +121,104 @@ describe('Settings', () => {
         expect(getByText('Destroy account')).toBeInTheDocument();
     });
 
-    it('opens personal details dialog on click', () => {
+    it('opens personal details dialog showing user info', () => {
         const { getByText, getByTestId } = render(<Settings />);
         fireEvent.click(getByText('Personal details'));
         expect(getByTestId('dialog')).toBeInTheDocument();
+        expect(getByText(/john@example.com/)).toBeInTheDocument();
+        expect(getByText(/123 Main St/)).toBeInTheDocument();
+        expect(getByText(/12345/)).toBeInTheDocument();
     });
 
-    it('opens account details dialog on click', () => {
+    it('opens account details dialog showing accounts list', () => {
         const { getByText, getByTestId } = render(<Settings />);
         fireEvent.click(getByText('Account details'));
         expect(getByTestId('dialog')).toBeInTheDocument();
+        expect(getByText('Active accounts')).toBeInTheDocument();
+        expect(getByText('Euro')).toBeInTheDocument();
+        expect(getByText('US Dollar')).toBeInTheDocument();
+        expect(getByText('British Pound')).toBeInTheDocument();
     });
 
-    it('opens change password dialog on click', () => {
+    it('opens change password dialog with form fields', () => {
         const { getByText, getByTestId } = render(<Settings />);
         fireEvent.click(getByText('Change password'));
         expect(getByTestId('dialog')).toBeInTheDocument();
+        expect(getByTestId('form-field-oldPassword')).toBeInTheDocument();
+        expect(getByTestId('form-field-newPassword')).toBeInTheDocument();
+        expect(getByTestId('form-field-confirmPassword')).toBeInTheDocument();
     });
 
-    it('opens about dialog on click', () => {
-        const { getByText, getByTestId } = render(<Settings />);
+    it('submits change password form successfully', async () => {
+        mockUpdatePassword.mockResolvedValue({ data: { updatePassword: true } });
+        const { getByText } = render(<Settings />);
+        fireEvent.click(getByText('Change password'));
+        const submitBtn = getByText('Change password', { selector: 'span.MuiButton-label' });
+        fireEvent.click(submitBtn);
+        await waitFor(() => {
+            expect(mockUpdatePassword).toHaveBeenCalled();
+        });
+    });
+
+    it('handles change password error', async () => {
+        mockUpdatePassword.mockRejectedValue(new Error('GraphQL: Wrong password'));
+        const { getByText } = render(<Settings />);
+        fireEvent.click(getByText('Change password'));
+        const submitBtn = getByText('Change password', { selector: 'span.MuiButton-label' });
+        fireEvent.click(submitBtn);
+        await waitFor(() => {
+            expect(mockUpdatePassword).toHaveBeenCalled();
+        });
+    });
+
+    it('opens about dialog showing libraries', () => {
+        const { getByText, getByTestId, container } = render(<Settings />);
         fireEvent.click(getByText('About this website'));
         expect(getByTestId('dialog')).toBeInTheDocument();
+        const dialogContent = getByTestId('dialog').textContent;
+        expect(dialogContent).toContain('Libraries used');
+        expect(dialogContent).toContain('Server side technologies');
+        expect(dialogContent).toContain('Client side technologies');
+        expect(getByText('Apollo Server')).toBeInTheDocument();
+        expect(getByText('Express')).toBeInTheDocument();
+        expect(getByText('TypeScript')).toBeInTheDocument();
+        expect(getByText('Material UI')).toBeInTheDocument();
+    });
+
+    it('calls destroy account mutation on click', async () => {
+        mockDestroyAccount.mockResolvedValue({ data: { destroyAccount: true } });
+        const { getByText } = render(<Settings />);
+        fireEvent.click(getByText('Destroy account'));
+        await waitFor(() => {
+            expect(mockDestroyAccount).toHaveBeenCalled();
+        });
+    });
+
+    it('handles destroy account error', async () => {
+        mockDestroyAccount.mockRejectedValue(new Error('GraphQL: Cannot destroy'));
+        const { getByText } = render(<Settings />);
+        fireEvent.click(getByText('Destroy account'));
+        await waitFor(() => {
+            expect(mockDestroyAccount).toHaveBeenCalled();
+        });
+    });
+
+    it('shows loading when destroy account succeeds', async () => {
+        mockDestroyAccount.mockResolvedValue({ data: { destroyAccount: true } });
+        const { getByText, getByTestId } = render(<Settings />);
+        fireEvent.click(getByText('Destroy account'));
+        await waitFor(() => {
+            expect(getByTestId('loading')).toBeInTheDocument();
+        });
+    });
+
+    it('navigates to account from account details dialog', () => {
+        const { getByText } = render(<Settings />);
+        fireEvent.click(getByText('Account details'));
+        fireEvent.click(getByText('British Pound'));
+        expect(mockPush).toHaveBeenCalledWith({
+            pathname: '/accounts/1',
+            state: { id: '1', currency: 'GBP', balance: 1000 },
+        });
     });
 });
