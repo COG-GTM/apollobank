@@ -40,6 +40,31 @@ A fullstack GraphQL banking application built using React, Node & TypeScript.
 - Formik
 - Yup
 
+## Running the app
+
+A root `package.json` provides a single command to start both the server (`:4000`) and client (`:3000`) together with prefixed, color-coded logs.
+
+First-time setup (installs root, server, and client deps):
+
+```bash
+npm install
+npm run install:all
+```
+
+Then start everything:
+
+```bash
+npm start        # alias for `npm run dev`
+```
+
+Other scripts:
+
+- `npm run dev` — same as `npm start`.
+- `npm run seed` — seed the database (see below).
+- `npm run install:all` — install dependencies in `server/` and `client/`.
+
+For full prerequisites (Node 18, PostgreSQL, env vars), see [`SETUP.md`](./SETUP.md).
+
 ## Seeding the database
 
 A seed script is provided to populate the database with example data for development.

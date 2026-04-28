@@ -1,0 +1,16 @@
+{
+  "name": "apollobank",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Run the apollobank server and client together.",
+  "scripts": {
+    "install:all": "npm --prefix server install && npm --prefix client install",
+    "dev": "concurrently -n server,client -c blue,green \"npm --prefix server run dev\" \"cross-env NODE_OPTIONS=--openssl-legacy-provider TSC_COMPILE_ON_ERROR=true ESLINT_NO_DEV_ERRORS=true npm --prefix client start\"",
+    "start": "npm run dev",
+    "seed": "npm --prefix server run seed"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "cross-env": "^7.0.3"
+  }
+}
