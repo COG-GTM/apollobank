@@ -1,22 +1,21 @@
+import { MutationTuple } from '@apollo/react-hooks';
+import { Button, ThemeProvider } from '@material-ui/core';
+import { Form, Formik } from 'formik';
 import React, { useState } from 'react';
 import { RouteComponentProps } from 'react-router-dom';
+import { ErrorMessage } from '../../components/Alerts/AlertMessage';
+import { FormTextField } from '../../components/Forms/FormTextField';
 import {
-    useLoginMutation,
+    LoginMutation,
+    LoginMutationVariables,
     MeDocument,
     MeQuery,
-    LoginMutationVariables,
-    LoginMutation,
+    useLoginMutation,
 } from '../../generated/graphql';
-import { setAccessToken } from '../../utils/accessToken';
-import { Formik, Form } from 'formik';
-import { FormTextField } from '../../components/Forms/FormTextField';
-import { Button, ThemeProvider } from '@material-ui/core';
-import { theme, ColorScheme } from '../../utils/theme';
 import { loginValidationSchema } from '../../schemas /loginValidationSchema';
-import { ErrorMessage } from '../../components/Alerts/AlertMessage';
+import { setAccessToken } from '../../utils/accessToken';
+import { ColorScheme, theme } from '../../utils/theme';
 import { useLoginStyles } from './Login.style';
-import { MutationTuple } from '@apollo/react-hooks';
-import { ExecutionResult } from 'graphql';
 
 export const Login: React.FC<RouteComponentProps> = ({ history }) => {
     // GraphQL Mutations
@@ -45,7 +44,7 @@ export const Login: React.FC<RouteComponentProps> = ({ history }) => {
 
                     // On login button click, call the login mutation
                     try {
-                        const response: ExecutionResult<LoginMutation> = await login({
+                        const response = await login({
                             variables: {
                                 email: data.email,
                                 password: data.password,
@@ -73,7 +72,7 @@ export const Login: React.FC<RouteComponentProps> = ({ history }) => {
                             resetForm();
                         }
                     } catch (error) {
-                        const errorMessage: string = error.message.split(':')[1];
+                        const errorMessage: string = (error as Error).message.split(':')[1];
                         setErrorMessage(errorMessage);
                         setSubmitting(false);
                     }

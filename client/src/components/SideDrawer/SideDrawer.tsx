@@ -1,15 +1,14 @@
-import React, { useState, useEffect, MouseEvent } from 'react';
-import { useSideDrawerStyles } from './SideDrawer.style';
-import {
-    useMeQuery,
-    useLogoutMutation,
-    MeQueryResult,
-    LogoutMutationVariables,
-    LogoutMutation,
-} from '../../generated/graphql';
-import { useHistory } from 'react-router-dom';
-import { setAccessToken } from '../../utils/accessToken';
 import { MutationTuple } from '@apollo/react-hooks';
+import React, { MouseEvent, useEffect, useState } from 'react';
+import { useHistory } from 'react-router-dom';
+import {
+    LogoutMutation,
+    LogoutMutationVariables,
+    useLogoutMutation,
+    useMeQuery,
+} from '../../generated/graphql';
+import { setAccessToken } from '../../utils/accessToken';
+import { useSideDrawerStyles } from './SideDrawer.style';
 
 const authUserNavigationItems: string[] = ['Dashboard', 'Settings', 'Logout'];
 const nonAuthUserNavigationItems: string[] = ['Login', 'Sign Up'];
@@ -20,13 +19,11 @@ interface SideDrawerProps {
 
 export const SideDrawer: React.FC<SideDrawerProps> = (props: SideDrawerProps) => {
     // GraphQL Mutations
-    const [logout, { client }]: MutationTuple<
-        LogoutMutation,
-        LogoutMutationVariables
-    > = useLogoutMutation();
+    const [logout, { client }]: MutationTuple<LogoutMutation, LogoutMutationVariables> =
+        useLogoutMutation();
 
     // GraphQL Queries
-    const { data, loading }: MeQueryResult = useMeQuery();
+    const { data, loading } = useMeQuery();
 
     // State
     const [showAuthUserNavigationItems, setShowAuthUserNavigationItems] = useState<boolean>(false);
@@ -54,7 +51,7 @@ export const SideDrawer: React.FC<SideDrawerProps> = (props: SideDrawerProps) =>
     const renderAuthUserNavigationItems = (): JSX.Element => {
         return (
             <>
-                {authUserNavigationItems.map(item => {
+                {authUserNavigationItems.map((item) => {
                     let routeTo: string = '/';
                     let logOutClicked: boolean = false;
 

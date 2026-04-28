@@ -1,67 +1,58 @@
-import React, { useState, useEffect } from 'react';
+import { MutationTuple } from '@apollo/react-hooks';
 import {
-    useMeQuery,
-    MeQueryResult,
-    useAccountsQuery,
-    AccountsQueryResult,
-    Account,
-    useUpdatePasswordMutation,
-    UpdatePasswordMutation,
-    UpdatePasswordMutationVariables,
-    DestroyAccountMutation,
-    DestroyAccountMutationVariables,
-    LogoutMutationVariables,
-    useLogoutMutation,
-    LogoutMutation,
-    useDestroyAccountMutation,
-} from '../../generated/graphql';
-import {
+    Button,
     List,
     ListItem,
     ListItemIcon,
     ListItemText,
     ThemeProvider,
-    Button,
 } from '@material-ui/core';
-import AccountCircleIcon from '@material-ui/icons/AccountCircle';
 import AccountBalanceIcon from '@material-ui/icons/AccountBalance';
-import VpnKeyIcon from '@material-ui/icons/VpnKey';
-import InfoIcon from '@material-ui/icons/Info';
+import AccountCircleIcon from '@material-ui/icons/AccountCircle';
 import DeleteForeverIcon from '@material-ui/icons/DeleteForever';
-import { Title } from '../../components/Typography/Title';
-import { Dialog } from '../../components/Dialog/Dialog';
-import { ReactComponent as Euro } from '../../assets/world.svg';
+import InfoIcon from '@material-ui/icons/Info';
+import VpnKeyIcon from '@material-ui/icons/VpnKey';
+import { Form, Formik } from 'formik';
+import React, { useEffect, useState } from 'react';
+import { useHistory } from 'react-router-dom';
 import { ReactComponent as Dollar } from '../../assets/flag.svg';
 import { ReactComponent as Pound } from '../../assets/uk.svg';
-import { useHistory } from 'react-router-dom';
-import { MutationTuple } from '@apollo/react-hooks';
-import { Formik, Form } from 'formik';
+import { ReactComponent as Euro } from '../../assets/world.svg';
+import { ErrorMessage, SuccessMessage } from '../../components/Alerts/AlertMessage';
+import { Dialog } from '../../components/Dialog/Dialog';
 import { FormTextField } from '../../components/Forms/FormTextField';
-import { theme, ColorScheme } from '../../utils/theme';
-import { SuccessMessage, ErrorMessage } from '../../components/Alerts/AlertMessage';
-import { changePasswordValidationSchema } from '../../schemas /changePasswordValidationSchema';
-import { ExecutionResultDataDefault, ExecutionResult } from 'graphql/execution/execute';
-import { setAccessToken } from '../../utils/accessToken';
 import { Loading } from '../../components/Loading/Loading';
+import { Title } from '../../components/Typography/Title';
+import {
+    Account,
+    DestroyAccountMutation,
+    DestroyAccountMutationVariables,
+    LogoutMutation,
+    LogoutMutationVariables,
+    UpdatePasswordMutation,
+    UpdatePasswordMutationVariables,
+    useAccountsQuery,
+    useDestroyAccountMutation,
+    useLogoutMutation,
+    useMeQuery,
+    useUpdatePasswordMutation,
+} from '../../generated/graphql';
+import { changePasswordValidationSchema } from '../../schemas /changePasswordValidationSchema';
+import { setAccessToken } from '../../utils/accessToken';
+import { ColorScheme, theme } from '../../utils/theme';
 
 export const Settings: React.FC = () => {
     // GraphQL Queries
-    const { data }: MeQueryResult = useMeQuery();
-    const accounts: AccountsQueryResult = useAccountsQuery();
+    const { data } = useMeQuery();
+    const accounts = useAccountsQuery();
 
     // GraphQL Mutations
-    const [updatePassword]: MutationTuple<
-        UpdatePasswordMutation,
-        UpdatePasswordMutationVariables
-    > = useUpdatePasswordMutation();
-    const [destroyAccount]: MutationTuple<
-        DestroyAccountMutation,
-        DestroyAccountMutationVariables
-    > = useDestroyAccountMutation();
-    const [logout, { client }]: MutationTuple<
-        LogoutMutation,
-        LogoutMutationVariables
-    > = useLogoutMutation();
+    const [updatePassword]: MutationTuple<UpdatePasswordMutation, UpdatePasswordMutationVariables> =
+        useUpdatePasswordMutation();
+    const [destroyAccount]: MutationTuple<DestroyAccountMutation, DestroyAccountMutationVariables> =
+        useDestroyAccountMutation();
+    const [logout, { client }]: MutationTuple<LogoutMutation, LogoutMutationVariables> =
+        useLogoutMutation();
 
     // State
     const [showLoadingIcon, setShowLoadingIcon] = useState<boolean>(false);
@@ -197,7 +188,7 @@ export const Settings: React.FC = () => {
                                     resetForm();
                                 }
                             } catch (error) {
-                                const errorMessage = error.message.split(':')[1];
+                                const errorMessage = (error as Error).message.split(':')[1];
                                 setErrorMessage(errorMessage);
                                 setSubmitting(false);
                             }
@@ -503,7 +494,7 @@ export const Settings: React.FC = () => {
                                 button
                                 onClick={async () => {
                                     try {
-                                        const response: ExecutionResult<ExecutionResultDataDefault> = await destroyAccount();
+                                        const response = await destroyAccount();
 
                                         if (response && response.data) {
                                             setShowLoadingIcon(true);
@@ -514,7 +505,9 @@ export const Settings: React.FC = () => {
                                             }, 3000);
                                         }
                                     } catch (error) {
-                                        const errorMessage: string = error.message.split(':')[1];
+                                        const errorMessage: string = (error as Error).message.split(
+                                            ':',
+                                        )[1];
                                         console.log(errorMessage);
                                     }
                                 }}

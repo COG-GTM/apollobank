@@ -1,19 +1,15 @@
 import React from 'react';
 import {
-    ResponsiveContainer,
-    AreaChart,
     Area,
+    AreaChart,
+    CartesianGrid,
+    Legend,
+    ResponsiveContainer,
+    Tooltip,
     XAxis,
     YAxis,
-    CartesianGrid,
-    Tooltip,
-    Legend,
 } from 'recharts';
-import {
-    useTransactionsQuery,
-    TransactionsQueryResult,
-    Transaction,
-} from '../../generated/graphql';
+import { Transaction, useTransactionsQuery } from '../../generated/graphql';
 import { useChartStyles } from './Chart.style';
 
 interface ChartProps {
@@ -22,7 +18,7 @@ interface ChartProps {
 
 export const Chart: React.FC<ChartProps> = ({ currency }) => {
     // GraphQL queries
-    const { data }: TransactionsQueryResult = useTransactionsQuery({
+    const { data } = useTransactionsQuery({
         variables: { currency: currency },
     });
 

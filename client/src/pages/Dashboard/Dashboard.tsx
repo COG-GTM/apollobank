@@ -1,45 +1,42 @@
-import React, { useState, useEffect, MouseEvent, ChangeEvent } from 'react';
+import { MutationTuple } from '@apollo/react-hooks';
 import {
     Container,
+    FormControl,
     Grid,
-    Paper,
+    InputLabel,
     List,
-    ListItemText,
     ListItem,
     ListItemIcon,
-    FormControl,
-    InputLabel,
-    Select,
+    ListItemText,
     MenuItem,
+    Paper,
+    Select,
     ThemeProvider,
 } from '@material-ui/core';
-import { Chart } from '../../components/Charts/Chart';
-import { Title } from '../../components/Typography/Title';
-import { ReactComponent as Euro } from '../../assets/world.svg';
+import React, { ChangeEvent, MouseEvent, useEffect, useState } from 'react';
+import { useHistory } from 'react-router-dom';
 import { ReactComponent as Dollar } from '../../assets/flag.svg';
 import { ReactComponent as Pound } from '../../assets/uk.svg';
+import { ReactComponent as Euro } from '../../assets/world.svg';
+import { AccountsCard, NoAccountsCard } from '../../components/Cards/AccountsCard';
+import { ApolloCard, NoApolloCard } from '../../components/Cards/ApolloCard';
+import { Chart } from '../../components/Charts/Chart';
+import { Dialog } from '../../components/Dialog/Dialog';
+import { Loading } from '../../components/Loading/Loading';
+import { Title } from '../../components/Typography/Title';
 import {
-    useAccountsQuery,
-    useCreateAccountMutation,
+    Account,
     AccountsDocument,
-    useCreateCardMutation,
-    useCardsQuery,
     CardsDocument,
-    AccountsQueryResult,
-    CardsQueryResult,
     CreateAccountMutation,
     CreateAccountMutationVariables,
     CreateCardMutation,
     CreateCardMutationVariables,
-    Account,
+    useAccountsQuery,
+    useCardsQuery,
+    useCreateAccountMutation,
+    useCreateCardMutation,
 } from '../../generated/graphql';
-import { Loading } from '../../components/Loading/Loading';
-import { useHistory } from 'react-router-dom';
-import { AccountsCard, NoAccountsCard } from '../../components/Cards/AccountsCard';
-import { Dialog } from '../../components/Dialog/Dialog';
-import { NoApolloCard, ApolloCard } from '../../components/Cards/ApolloCard';
-import { MutationTuple } from '@apollo/react-hooks';
-import { ExecutionResult } from 'graphql';
 import { theme } from '../../utils/theme';
 import { useDashboardStyles } from './styles/Dashboard.style';
 
@@ -47,18 +44,14 @@ const GLOBAL_CURRENCIES: string[] = ['EUR', 'USD', 'GBP'];
 
 export const Dashboard: React.FC = () => {
     // GraphQL Mutations
-    const [createAccount]: MutationTuple<
-        CreateAccountMutation,
-        CreateAccountMutationVariables
-    > = useCreateAccountMutation();
-    const [createCard]: MutationTuple<
-        CreateCardMutation,
-        CreateCardMutationVariables
-    > = useCreateCardMutation();
+    const [createAccount]: MutationTuple<CreateAccountMutation, CreateAccountMutationVariables> =
+        useCreateAccountMutation();
+    const [createCard]: MutationTuple<CreateCardMutation, CreateCardMutationVariables> =
+        useCreateCardMutation();
 
     // GraphQL Queries
-    const { data, loading }: AccountsQueryResult = useAccountsQuery();
-    const cards: CardsQueryResult = useCardsQuery();
+    const { data, loading } = useAccountsQuery();
+    const cards = useCardsQuery();
 
     // State
     const [currencies, setCurrencies] = useState<string[]>(['']);
@@ -146,30 +139,30 @@ export const Dashboard: React.FC = () => {
                             onClick={async () => {
                                 // Call the createAccount mutation
                                 try {
-                                    const response: ExecutionResult<CreateAccountMutation> = await createAccount(
-                                        {
-                                            variables: {
-                                                currency: currency,
-                                            },
-                                            refetchQueries: [
-                                                {
-                                                    query: AccountsDocument,
-                                                    variables: {},
-                                                },
-                                                {
-                                                    query: CardsDocument,
-                                                    variables: {},
-                                                },
-                                            ],
+                                    const response = await createAccount({
+                                        variables: {
+                                            currency: currency,
                                         },
-                                    );
+                                        refetchQueries: [
+                                            {
+                                                query: AccountsDocument,
+                                                variables: {},
+                                            },
+                                            {
+                                                query: CardsDocument,
+                                                variables: {},
+                                            },
+                                        ],
+                                    });
 
                                     if (response && response.data) {
                                         setAnalyticsAccount(currency);
                                         setOpenDialog(false);
                                     }
                                 } catch (error) {
-                                    const errorMessage: string = error.message.split(':')[1];
+                                    const errorMessage: string = (error as Error).message.split(
+                                        ':',
+                                    )[1];
                                     console.log(errorMessage);
                                 }
                             }}
@@ -198,7 +191,7 @@ export const Dashboard: React.FC = () => {
 
         try {
             // Call the createCard mutation
-            const response: ExecutionResult<CreateCardMutation> = await createCard({
+            const response = await createCard({
                 variables: {},
                 refetchQueries: [
                     {
@@ -212,7 +205,7 @@ export const Dashboard: React.FC = () => {
                 console.log('Card successfully created!');
             }
         } catch (error) {
-            const errorMessage: string = error.message.split(':')[1];
+            const errorMessage: string = (error as Error).message.split(':')[1];
             console.log(errorMessage);
         }
     };
@@ -378,7 +371,7 @@ export const Dashboard: React.FC = () => {
                         {cards.data &&
                             cards.data.cards &&
                             cards.data.cards.length > 0 &&
-                            cards.data.cards.map(card => {
+                            cards.data.cards.map((card) => {
                                 return (
                                     <Grid key={card.id} item xs={12} md={4} lg={4}>
                                         <Paper className={apolloCardPaper}>

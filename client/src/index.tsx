@@ -1,12 +1,18 @@
-import React from 'react';
-import ReactDOM from 'react-dom';
-import './index.css';
-import { ApolloClient, InMemoryCache, HttpLink, ApolloLink, Observable, ApolloProvider } from '@apollo/client';
+import {
+    ApolloClient,
+    ApolloLink,
+    ApolloProvider,
+    HttpLink,
+    InMemoryCache,
+    Observable,
+} from '@apollo/client';
 import { onError } from '@apollo/client/link/error';
-import { getAccessToken, setAccessToken } from './utils/accessToken';
 import { TokenRefreshLink } from 'apollo-link-token-refresh';
 import jwtDecode from 'jwt-decode';
+import ReactDOM from 'react-dom';
 import { App } from './App';
+import './index.css';
+import { getAccessToken, setAccessToken } from './utils/accessToken';
 
 // Setup Apollo Client manually without Apollo Boost
 // https://www.apollographql.com/docs/react/migrating/boost-migration/
@@ -15,10 +21,10 @@ const cache = new InMemoryCache({});
 
 const requestLink = new ApolloLink(
     (operation, forward) =>
-        new Observable(observer => {
+        new Observable((observer) => {
             let handle: any;
             Promise.resolve(operation)
-                .then(operation => {
+                .then((operation) => {
                     const accessToken = getAccessToken();
                     operation.setContext({
                         headers: {
@@ -53,7 +59,7 @@ const client = new ApolloClient({
                 }
 
                 try {
-                    const { exp } = jwtDecode(token);
+                    const { exp } = jwtDecode<{ exp: number }>(token);
                     if (Date.now() >= exp * 1000) {
                         return false;
                     } else {
@@ -69,10 +75,10 @@ const client = new ApolloClient({
                     credentials: 'include',
                 });
             },
-            handleFetch: accessToken => {
+            handleFetch: (accessToken) => {
                 setAccessToken(accessToken);
             },
-            handleError: err => {
+            handleError: (err) => {
                 console.warn('Your refresh token is invalid. Try to relogin');
                 console.error(err);
             },

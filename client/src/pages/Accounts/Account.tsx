@@ -1,58 +1,51 @@
-import React, { useState, MouseEvent, useEffect, ChangeEvent } from 'react';
-import { useLocation, useHistory } from 'react-router-dom';
+import { MutationTuple } from '@apollo/react-hooks';
 import {
-    ThemeProvider,
-    IconButton,
     Button,
-    InputLabel,
     FormControl,
-    Select,
+    IconButton,
+    InputLabel,
     MenuItem,
+    Select,
+    ThemeProvider,
 } from '@material-ui/core';
 import AddIcon from '@material-ui/icons/Add';
-import SwapVert from '@material-ui/icons/SwapVert';
 import InfoOutlinedIcon from '@material-ui/icons/InfoOutlined';
-import { ReactComponent as Euro } from '../../assets/world.svg';
+import SwapVert from '@material-ui/icons/SwapVert';
+import { Form, Formik } from 'formik';
+import React, { ChangeEvent, MouseEvent, useEffect, useState } from 'react';
+import { useHistory, useLocation } from 'react-router-dom';
 import { ReactComponent as Dollar } from '../../assets/flag.svg';
 import { ReactComponent as Pound } from '../../assets/uk.svg';
-import { theme } from '../../utils/theme';
-import { useAccountStyles } from './styles/Account.style';
-import {
-    useCreateTransactionMutation,
-    useTransactionsQuery,
-    TransactionsDocument,
-    useAddMoneyMutation,
-    useMeQuery,
-    CreateTransactionMutation,
-    CreateTransactionMutationVariables,
-    AddMoneyMutation,
-    AddMoneyMutationVariables,
-    TransactionsQueryResult,
-    MeQueryResult,
-    useAccountQuery,
-    ExchangeMutation,
-    ExchangeMutationVariables,
-    useExchangeMutation,
-    AccountQueryResult,
-    CardsQueryResult,
-    useCardsQuery,
-    AccountsQueryResult,
-    useAccountsQuery,
-    DeleteAccountMutationVariables,
-    DeleteAccountMutation,
-    useDeleteAccountMutation,
-} from '../../generated/graphql';
+import { ReactComponent as Euro } from '../../assets/world.svg';
+import { ErrorMessage, SuccessMessage, WarningMessage } from '../../components/Alerts/AlertMessage';
 import { Dialog } from '../../components/Dialog/Dialog';
 import { FormTextField } from '../../components/Forms/FormTextField';
-import { Form, Formik } from 'formik';
-import { Title } from '../../components/Typography/Title';
-import { MutationTuple } from '@apollo/react-hooks';
-import { ExecutionResult } from 'graphql';
-import { ExecutionResultDataDefault } from 'graphql/execution/execute';
-import { Transactions } from './Transactions/Transactions';
-import { ErrorMessage, SuccessMessage, WarningMessage } from '../../components/Alerts/AlertMessage';
-import { addMoneyValidationSchema } from '../../schemas /addMoneyValidationSchema';
 import { Loading } from '../../components/Loading/Loading';
+import { Title } from '../../components/Typography/Title';
+import {
+    AddMoneyMutation,
+    AddMoneyMutationVariables,
+    CreateTransactionMutation,
+    CreateTransactionMutationVariables,
+    DeleteAccountMutation,
+    DeleteAccountMutationVariables,
+    ExchangeMutation,
+    ExchangeMutationVariables,
+    TransactionsDocument,
+    useAccountQuery,
+    useAccountsQuery,
+    useAddMoneyMutation,
+    useCardsQuery,
+    useCreateTransactionMutation,
+    useDeleteAccountMutation,
+    useExchangeMutation,
+    useMeQuery,
+    useTransactionsQuery,
+} from '../../generated/graphql';
+import { addMoneyValidationSchema } from '../../schemas /addMoneyValidationSchema';
+import { theme } from '../../utils/theme';
+import { useAccountStyles } from './styles/Account.style';
+import { Transactions } from './Transactions/Transactions';
 
 export const Account: React.FC = () => {
     // State
@@ -76,27 +69,21 @@ export const Account: React.FC = () => {
         CreateTransactionMutation,
         CreateTransactionMutationVariables
     > = useCreateTransactionMutation();
-    const [addMoney]: MutationTuple<
-        AddMoneyMutation,
-        AddMoneyMutationVariables
-    > = useAddMoneyMutation();
-    const [exchange]: MutationTuple<
-        ExchangeMutation,
-        ExchangeMutationVariables
-    > = useExchangeMutation();
-    const [deleteAccount]: MutationTuple<
-        DeleteAccountMutation,
-        DeleteAccountMutationVariables
-    > = useDeleteAccountMutation();
+    const [addMoney]: MutationTuple<AddMoneyMutation, AddMoneyMutationVariables> =
+        useAddMoneyMutation();
+    const [exchange]: MutationTuple<ExchangeMutation, ExchangeMutationVariables> =
+        useExchangeMutation();
+    const [deleteAccount]: MutationTuple<DeleteAccountMutation, DeleteAccountMutationVariables> =
+        useDeleteAccountMutation();
 
     // GraphQL Queries
-    const user: MeQueryResult = useMeQuery();
-    const account: AccountQueryResult = useAccountQuery({
+    const user = useMeQuery();
+    const account = useAccountQuery({
         variables: { currency: location.state.currency },
     });
-    const accounts: AccountsQueryResult = useAccountsQuery();
-    const cards: CardsQueryResult = useCardsQuery();
-    const { data }: TransactionsQueryResult = useTransactionsQuery({
+    const accounts = useAccountsQuery();
+    const cards = useCardsQuery();
+    const { data } = useTransactionsQuery({
         variables: { currency: location.state.currency },
     });
 
@@ -151,7 +138,7 @@ export const Account: React.FC = () => {
 
     const simulate = async (): Promise<void> => {
         try {
-            const response: ExecutionResult<ExecutionResultDataDefault> = await createTransaction({
+            const response = await createTransaction({
                 variables: {
                     currency: location.state.currency,
                 },
@@ -169,7 +156,7 @@ export const Account: React.FC = () => {
                 setAccountBalance(response.data.createTransaction);
             }
         } catch (error) {
-            const errorMessage: string = error.message.split(':')[1];
+            const errorMessage: string = (error as Error).message.split(':')[1];
             console.log(errorMessage);
         }
     };
@@ -200,7 +187,7 @@ export const Account: React.FC = () => {
                                     resetForm();
                                 }
                             } catch (error) {
-                                const errorMessage = error.message.split(':')[1];
+                                const errorMessage = (error as Error).message.split(':')[1];
                                 setErrorMessage(errorMessage);
                                 setSubmitting(false);
                             }
@@ -264,7 +251,9 @@ export const Account: React.FC = () => {
                                         resetForm();
                                     }
                                 } catch (error) {
-                                    const errorMessage: string = error.message.split(':')[1];
+                                    const errorMessage: string = (error as Error).message.split(
+                                        ':',
+                                    )[1];
                                     setErrorMessage(errorMessage);
                                     setSubmitting(false);
                                 }
@@ -297,13 +286,13 @@ export const Account: React.FC = () => {
                                             >
                                                 {accounts.data &&
                                                     accounts.data.accounts
-                                                        .filter(account => {
+                                                        .filter((account) => {
                                                             return (
                                                                 account.currency !==
                                                                 location.state.currency
                                                             );
                                                         })
-                                                        .map(account => {
+                                                        .map((account) => {
                                                             return (
                                                                 <MenuItem
                                                                     key={account.id}
@@ -354,13 +343,11 @@ export const Account: React.FC = () => {
                                 onClick={async () => {
                                     // On button click, call the deleteAccount mutation
                                     try {
-                                        const response: ExecutionResult<ExecutionResultDataDefault> = await deleteAccount(
-                                            {
-                                                variables: {
-                                                    currency: location.state.currency,
-                                                },
+                                        const response = await deleteAccount({
+                                            variables: {
+                                                currency: location.state.currency,
                                             },
-                                        );
+                                        });
 
                                         if (response && response.data) {
                                             setShowLoadingIcon(true);
@@ -370,7 +357,9 @@ export const Account: React.FC = () => {
                                             }, 3000);
                                         }
                                     } catch (error) {
-                                        const warning: string = error.message.split(':')[1];
+                                        const warning: string = (error as Error).message.split(
+                                            ':',
+                                        )[1];
                                         setWarningMessage(warning);
                                     }
                                 }}
@@ -460,7 +449,7 @@ export const Account: React.FC = () => {
                             <IconButton
                                 className={classes.accountButton}
                                 aria-label="Add"
-                                onClick={e => {
+                                onClick={(e) => {
                                     e.preventDefault();
                                     setOpenAddDialog(true);
                                 }}

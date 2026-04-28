@@ -1,16 +1,15 @@
-import React, { useState, useEffect, MouseEvent } from 'react';
-import { useToolbarStyles } from './Toolbar.style';
-import { DrawerToggleButton } from '../SideDrawer/DrawerToggleButton';
+import { MutationTuple } from '@apollo/react-hooks';
+import React, { MouseEvent, useEffect, useState } from 'react';
+import { useHistory } from 'react-router-dom';
 import {
-    useMeQuery,
-    useLogoutMutation,
-    MeQueryResult,
     LogoutMutation,
     LogoutMutationVariables,
+    useLogoutMutation,
+    useMeQuery,
 } from '../../generated/graphql';
-import { useHistory } from 'react-router-dom';
 import { setAccessToken } from '../../utils/accessToken';
-import { MutationTuple } from '@apollo/react-hooks';
+import { DrawerToggleButton } from '../SideDrawer/DrawerToggleButton';
+import { useToolbarStyles } from './Toolbar.style';
 
 interface ToolbarProps {
     drawerClickHandler(): void;
@@ -20,13 +19,11 @@ const navigationItems: string[] = ['Dashboard', 'Settings'];
 
 export const Toolbar: React.FC<ToolbarProps> = (props: ToolbarProps) => {
     // GraphQL Mutations
-    const [logout, { client }]: MutationTuple<
-        LogoutMutation,
-        LogoutMutationVariables
-    > = useLogoutMutation();
+    const [logout, { client }]: MutationTuple<LogoutMutation, LogoutMutationVariables> =
+        useLogoutMutation();
 
     // GraphQL Queries
-    const { data, loading }: MeQueryResult = useMeQuery();
+    const { data, loading } = useMeQuery();
 
     // State
     const [showAuthUserButtons, setShowAuthUserButtons] = useState<boolean>(false);
@@ -68,7 +65,7 @@ export const Toolbar: React.FC<ToolbarProps> = (props: ToolbarProps) => {
                 })}
                 <button
                     className={classes.navButton}
-                    onClick={async e => {
+                    onClick={async (e) => {
                         e.preventDefault();
                         await logout().then(() => history.push('/'));
                         setAccessToken('');
@@ -86,7 +83,7 @@ export const Toolbar: React.FC<ToolbarProps> = (props: ToolbarProps) => {
             <>
                 <button
                     className={classes.navButton}
-                    onClick={e => {
+                    onClick={(e) => {
                         e.preventDefault();
                         history.push('/login');
                     }}
