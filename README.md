@@ -40,6 +40,30 @@ A fullstack GraphQL banking application built using React, Node & TypeScript.
 - Formik
 - Yup
 
+## Seeding the database
+
+A seed script is provided to populate the database with example data for development.
+
+Prerequisites: PostgreSQL running locally with the credentials defined in `server/ormconfig.json` (database `expressbank`).
+
+From the `server/` directory:
+
+```bash
+npm run seed
+```
+
+This will:
+
+- Truncate the `users`, `accounts`, `cards`, and `transactions` tables.
+- Create a demo user plus 5 randomly generated users (each with 2 accounts, 2 cards, and 10 transactions per account).
+
+Demo login credentials:
+
+- **Email:** `demo@apollobank.com`
+- **Password:** `password123`
+
+All generated users share the password `password123`.
+
 ## Todo
 
 - [ ] Don't allow the user to destroy an account if they are in debt or their account balance > 0
