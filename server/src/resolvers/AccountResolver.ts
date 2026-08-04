@@ -39,13 +39,7 @@ export class AccountResolver {
 			return null;
 		}
 
-		const owner: User | undefined = await User.findOne({ where: { id: payload.userId } });
-
-		if (owner) {
-			return Account.find({ where: { owner: owner } });
-		}
-
-		return null;
+		return Account.find({ where: { owner: { id: payload.userId } } });
 	}
 
 	/**
@@ -63,17 +57,7 @@ export class AccountResolver {
 			throw new Error("");
 		}
 
-		const owner: User | undefined = await User.findOne({ where: { id: payload.userId } });
-
-		if (owner) {
-			const account = Account.findOne({ where: { owner: owner, currency: currency } });
-
-			if (account) {
-				return account;
-			}
-		}
-
-		return undefined;
+		return Account.findOne({ where: { owner: { id: payload.userId }, currency: currency } });
 	}
 
 	/**
@@ -93,38 +77,27 @@ export class AccountResolver {
 			return null;
 		}
 
-		const owner: User | undefined = await User.findOne({ where: { id: payload.userId } });
+		const account: Account | undefined = await Account.findOne({
+			where: { owner: { id: payload.userId }, currency: currency },
+		});
 
-		if (owner) {
-			const account: Account | undefined = await Account.findOne({
-				where: { owner: owner, currency: currency },
-			});
-
-			// If an account for the specified owner exists, add money and update the account balance
-			if (account) {
-				try {
-					await Account.update({ id: account.id }, { balance: account.balance + amount });
-				} catch (err) {
-					throw new Error(ErrorMessages.ADD_MONEY);
-				}
+		// If an account for the specified owner exists, add money and update the account balance
+		if (account) {
+			try {
+				await Account.update({ id: account.id }, { balance: account.balance + amount });
+			} catch (err) {
+				throw new Error(ErrorMessages.ADD_MONEY);
 			}
+
+			// Return the updated account, the new balance is already known in memory
+			account.balance = account.balance + amount;
+
+			return {
+				account: account,
+				message: SuccessMessages.ADD_MONEY,
+			};
 		}
 
-		// Return the updated account
-		try {
-			const updatedAccount: Account | undefined = await Account.findOne({
-				where: { owner: owner, currency: currency },
-			});
-
-			if (updatedAccount) {
-				return {
-					account: updatedAccount,
-					message: SuccessMessages.ADD_MONEY,
-				};
-			}
-		} catch (error) {
-			throw new Error(ErrorMessages.ADD_MONEY);
-		}
 		return null;
 	}
 
@@ -147,79 +120,68 @@ export class AccountResolver {
 			return null;
 		}
 
-		const owner: User | undefined = await User.findOne({ where: { id: payload.userId } });
+		const currentAccount: Account | undefined = await Account.findOne({
+			where: { owner: { id: payload.userId }, currency: selectedAccountCurrency },
+		});
 
-		if (owner) {
-			const currentAccount: Account | undefined = await Account.findOne({
-				where: { owner: owner, currency: selectedAccountCurrency },
-			});
+		if (currentAccount) {
+			if (currentAccount.balance >= amount) {
+				// Exchange the amount to the other account
+				const toAccount: Account | undefined = await Account.findOne({
+					where: {
+						owner: { id: payload.userId },
+						currency: toAccountCurrency,
+					},
+				});
 
-			if (currentAccount) {
-				if (currentAccount.balance >= amount) {
-					// Exchange the amount to the other account
-					const toAccount: Account | undefined = await Account.findOne({
-						where: {
-							owner: owner,
-							currency: toAccountCurrency,
-						},
-					});
+				if (toAccount) {
+					try {
+						let amountWithConversion: number = 0;
 
-					if (toAccount) {
-						try {
-							let amountWithConversion: number = 0;
+						// Apply conversion rates for each currency
+						if (selectedAccountCurrency === "EUR" && toAccountCurrency === "USD") {
+							amountWithConversion = amount * 1.11;
+						} else if (selectedAccountCurrency === "EUR" && toAccountCurrency === "GBP") {
+							amountWithConversion = amount * 0.89;
+						} else if (selectedAccountCurrency === "USD" && toAccountCurrency === "EUR") {
+							amountWithConversion = amount * 0.9;
+						} else if (selectedAccountCurrency === "USD" && toAccountCurrency === "GBP") {
+							amountWithConversion = amount * 0.8;
+						} else if (selectedAccountCurrency === "GBP" && toAccountCurrency === "USD") {
+							amountWithConversion = amount * 1.25;
+						} else if (selectedAccountCurrency === "GBP" && toAccountCurrency === "EUR") {
+							amountWithConversion = amount * 1.13;
+						}
 
-							// Apply conversion rates for each currency
-							if (selectedAccountCurrency === "EUR" && toAccountCurrency === "USD") {
-								amountWithConversion = amount * 1.11;
-							} else if (selectedAccountCurrency === "EUR" && toAccountCurrency === "GBP") {
-								amountWithConversion = amount * 0.89;
-							} else if (selectedAccountCurrency === "USD" && toAccountCurrency === "EUR") {
-								amountWithConversion = amount * 0.9;
-							} else if (selectedAccountCurrency === "USD" && toAccountCurrency === "GBP") {
-								amountWithConversion = amount * 0.8;
-							} else if (selectedAccountCurrency === "GBP" && toAccountCurrency === "USD") {
-								amountWithConversion = amount * 1.25;
-							} else if (selectedAccountCurrency === "GBP" && toAccountCurrency === "EUR") {
-								amountWithConversion = amount * 1.13;
-							}
+						// Only update the account balances if the current accounts balance doesn't fall below 0 after applying conversion rates
+						if (currentAccount.balance - Math.round(amountWithConversion) >= 0) {
+							await Account.update(
+								{ id: toAccount.id },
+								{ balance: toAccount.balance + Math.round(amountWithConversion) }
+							);
+							await Account.update(
+								{ id: currentAccount.id },
+								{ balance: currentAccount.balance - Math.round(amountWithConversion) }
+							);
 
-							// Only update the account balances if the current accounts balance doesn't fall below 0 after applying conversion rates
-							if (currentAccount.balance - Math.round(amountWithConversion) >= 0) {
-								await Account.update(
-									{ id: toAccount.id },
-									{ balance: toAccount.balance + Math.round(amountWithConversion) }
-								);
-								await Account.update(
-									{ id: currentAccount.id },
-									{ balance: currentAccount.balance - Math.round(amountWithConversion) }
-								);
-							} else {
-								throw new Error(ErrorMessages.EXCHANGE);
-							}
-						} catch (error) {
-							console.log(error);
+							// The new balance is already known in memory, no need to re-fetch the account
+							currentAccount.balance = currentAccount.balance - Math.round(amountWithConversion);
+						} else {
 							throw new Error(ErrorMessages.EXCHANGE);
 						}
+					} catch (error) {
+						console.log(error);
+						throw new Error(ErrorMessages.EXCHANGE);
 					}
-				} else {
-					throw new Error(ErrorMessages.EXCHANGE);
 				}
+			} else {
+				throw new Error(ErrorMessages.EXCHANGE);
 			}
-		}
 
-		try {
-			const updatedAccount = await Account.findOne({
-				where: { owner: owner, currency: selectedAccountCurrency },
-			});
-
-			if (updatedAccount) {
-				return {
-					account: updatedAccount,
-					message: SuccessMessages.EXCHANGE,
-				};
-			}
-		} catch (error) {
-			throw new Error(ErrorMessages.EXCHANGE);
+			return {
+				account: currentAccount,
+				message: SuccessMessages.EXCHANGE,
+			};
 		}
 
 		return null;
