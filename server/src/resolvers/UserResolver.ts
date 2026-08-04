@@ -210,7 +210,11 @@ export class UserResolver {
 			return false;
 		}
 
-		const owner: User | undefined = await User.findOne({ where: { id: payload.userId } });
+		// Only the hashed password is needed to verify the old password
+		const owner: User | undefined = await User.findOne({
+			where: { id: payload.userId },
+			select: ["password"],
+		});
 
 		if (owner) {
 			const valid = await compare(oldPassword, owner.password);
@@ -219,14 +223,9 @@ export class UserResolver {
 				const updatedPassword: string = await hash(newPassword, 12);
 
 				try {
-					await User.update(
-						{
-							id: owner.id,
-						},
-						{
-							password: updatedPassword,
-						}
-					);
+					await User.update(payload.userId, {
+						password: updatedPassword,
+					});
 				} catch (err) {
 					console.log(err);
 					return false;
@@ -245,17 +244,12 @@ export class UserResolver {
 			return false;
 		}
 
-		const owner: User | undefined = await User.findOne({ where: { id: payload.userId } });
-
-		if (owner) {
-			try {
-				await User.delete({
-					id: owner.id,
-				});
-			} catch (error) {
-				throw new Error(ErrorMessages.DELETE_ACCOUNT);
-			}
+		try {
+			await User.delete(payload.userId);
+		} catch (error) {
+			throw new Error(ErrorMessages.DELETE_ACCOUNT);
 		}
+
 		return true;
 	}
 }
