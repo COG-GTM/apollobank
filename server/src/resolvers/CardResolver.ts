@@ -2,8 +2,6 @@ import { createRandomCardNumber, createRandomNumber } from "./../utils/createRan
 import { MyContext } from "./../MyContext";
 import { isAuth } from "../middleware";
 import { Resolver, Mutation, UseMiddleware, Ctx, Query } from "type-graphql";
-import { User } from "../entity/User";
-import { Account } from "../entity/Account";
 import { Card } from "../entity/Card";
 
 @Resolver()
@@ -19,17 +17,8 @@ export class CardResolver {
 			return null;
 		}
 
-		const owner: User | undefined = await User.findOne({ where: { id: payload.userId } });
-
-		if (owner) {
-			const account: Account | undefined = await Account.findOne({ where: { owner: owner } });
-
-			if (account) {
-				const cards = await Card.find({ where: { account: account } });
-				return cards;
-			}
-		}
-		return null;
+		const cards = await Card.find({ where: { owner: { id: parseInt(payload.userId) } } });
+		return cards;
 	}
 
 	/**
@@ -43,22 +32,18 @@ export class CardResolver {
 			return false;
 		}
 
-		const owner: User | undefined = await User.findOne({ where: { id: payload.userId } });
-
-		if (owner) {
-			try {
-				await Card.insert({
-					owner,
-					cardNumber: createRandomCardNumber(),
-					expiresIn: new Date(2023, 9),
-					pin: parseInt(createRandomNumber(4)),
-					cvv: parseInt(createRandomNumber(3)),
-					monthlySpendingLimit: 500,
-				});
-			} catch (err) {
-				console.log(err);
-				return false;
-			}
+		try {
+			await Card.insert({
+				owner: { id: parseInt(payload.userId) },
+				cardNumber: createRandomCardNumber(),
+				expiresIn: new Date(2023, 9),
+				pin: parseInt(createRandomNumber(4)),
+				cvv: parseInt(createRandomNumber(3)),
+				monthlySpendingLimit: 500,
+			});
+		} catch (err) {
+			console.log(err);
+			return false;
 		}
 
 		return true;
