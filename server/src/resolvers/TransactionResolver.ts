@@ -1,6 +1,5 @@
 import { Account } from "./../entity/Account";
 import { Transaction } from "./../entity/Transaction";
-import { User } from "./../entity/User";
 import { MyContext } from "./../MyContext";
 import { isAuth } from "../middleware";
 import { Resolver, Query, UseMiddleware, Ctx, Mutation, Arg, Float } from "type-graphql";
@@ -20,16 +19,13 @@ export class TransactionResolver {
 			return null;
 		}
 
-		const owner: User | undefined = await User.findOne({ where: { id: payload.userId } });
+		const account: Account | undefined = await Account.createQueryBuilder("account")
+			.where("account.ownerId = :ownerId", { ownerId: payload.userId })
+			.andWhere("account.currency = :currency", { currency: currency })
+			.getOne();
 
-		if (owner) {
-			const account: Account | undefined = await Account.findOne({
-				where: { owner: owner, currency: currency },
-			});
-
-			if (account) {
-				return Transaction.find({ where: { account: account } });
-			}
+		if (account) {
+			return Transaction.find({ where: { account: account } });
 		}
 
 		return null;
@@ -47,67 +43,60 @@ export class TransactionResolver {
 			return false;
 		}
 
-		const owner: User | undefined = await User.findOne({ where: { id: payload.userId } });
+		const account: Account | undefined = await Account.createQueryBuilder("account")
+			.where("account.ownerId = :ownerId", { ownerId: payload.userId })
+			.andWhere("account.currency = :currency", { currency: currency })
+			.getOne();
 
-		if (owner) {
-			const account: Account | undefined = await Account.findOne({
-				where: { owner: owner, currency: currency },
+		if (!account) {
+			return null;
+		}
+
+		// Generate fake financial data using faker
+		let transactionType: string = faker.finance.transactionType();
+		let amount: number = parseInt(faker.finance.amount());
+		let date: Date = faker.date.recent(31);
+		let balance: number = account.balance;
+
+		if (balance <= 0) {
+			throw new Error("You do not have the sufficient funds.");
+		}
+
+		// Update account balance depending on the transaction type faker generates
+		switch (transactionType) {
+			case "withdrawal":
+				balance -= amount;
+				break;
+			case "deposit":
+				balance += amount;
+				break;
+			case "payment":
+				balance -= amount;
+				break;
+			case "invoice":
+				balance -= amount;
+				break;
+		}
+
+		try {
+			await Transaction.insert({
+				account,
+				transactionType: transactionType,
+				date: date,
+				amount: amount.toString(),
 			});
-
-			if (account) {
-				// Generate fake financial data using faker
-				let transactionType: string = faker.finance.transactionType();
-				let amount: number = parseInt(faker.finance.amount());
-				let date: Date = faker.date.recent(31);
-				let balance: number = account.balance;
-
-				if (balance <= 0) {
-					throw new Error("You do not have the sufficient funds.");
-				}
-
-				// Update account balance depending on the transaction type faker generates
-				switch (transactionType) {
-					case "withdrawal":
-						balance -= amount;
-						break;
-					case "deposit":
-						balance += amount;
-						break;
-					case "payment":
-						balance -= amount;
-						break;
-					case "invoice":
-						balance -= amount;
-						break;
-				}
-
-				try {
-					await Transaction.insert({
-						account,
-						transactionType: transactionType,
-						date: date,
-						amount: amount.toString(),
-					});
-					await Account.update(
-						{
-							id: account.id,
-						},
-						{ balance: balance }
-					);
-				} catch (err) {
-					console.log(err);
-					return null;
-				}
-			}
+			await Account.update(
+				{
+					id: account.id,
+				},
+				{ balance: balance }
+			);
+		} catch (err) {
+			console.log(err);
+			return null;
 		}
 
-		// In order to update the total account balance, return the above updated Accounts balance
-		const updatedAccount = await Account.findOne({ where: { owner: owner, currency: currency } });
-
-		if (updatedAccount) {
-			return updatedAccount.balance;
-		}
-
-		return null;
+		// In order to update the total account balance, return the newly computed balance
+		return balance;
 	}
 }
