@@ -48,6 +48,10 @@ cp -n .env.example .env 2>/dev/null || true   # if you keep one; otherwise creat
 cat > .env <<'EOF'
 ACCESS_TOKEN_SECRET=apollobank-access-secret-local-dev
 REFRESH_TOKEN_SECRET=apollobank-refresh-secret-local-dev
+# Optional TypeORM/pg connection-pool tuning (safe defaults shown):
+# DB_POOL_MAX=20                    # max pooled connections
+# DB_POOL_IDLE_TIMEOUT_MS=30000     # close idle clients after this many ms
+# DB_POOL_CONNECTION_TIMEOUT_MS=5000 # fail if no connection within this many ms
 EOF
 
 npm install
