@@ -267,6 +267,21 @@ describe("AccountResolver", () => {
 			expect(update).toHaveBeenCalledWith({ id: 2 }, { balance: 389 });
 		});
 
+		it("moves no money when no conversion rate exists for the pair", async () => {
+			// Arrange
+			const { update } = setUpExchange(
+				{ currency: "EUR", balance: 1000 },
+				{ currency: "JPY", balance: 0 }
+			);
+
+			// Act
+			const result = await resolver.exchange("EUR", "JPY", 100, buildContext("1"));
+
+			// Assert
+			expect(update).not.toHaveBeenCalled();
+			expect(result?.message).toBe(SuccessMessages.EXCHANGE);
+		});
+
 		it("only looks at accounts owned by the caller", async () => {
 			// Arrange
 			const findOne = mockAccountsByCurrency({});

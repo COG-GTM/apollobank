@@ -17,6 +17,15 @@ import { Account } from "../entity/Account";
 import { createRandomSortCode, createRandomIbanCode } from "../utils/createRandom";
 import { SuccessMessages } from "../utils/messages";
 
+const conversionRates: Record<string, number | undefined> = {
+	"EUR-USD": 1.11,
+	"EUR-GBP": 0.89,
+	"USD-EUR": 0.9,
+	"USD-GBP": 0.8,
+	"GBP-USD": 1.25,
+	"GBP-EUR": 1.13,
+};
+
 @ObjectType()
 class AccountResponse {
 	@Field(() => Account)
@@ -164,24 +173,12 @@ export class AccountResolver {
 						},
 					});
 
-					if (toAccount && toAccount.id !== currentAccount.id) {
-						try {
-							let amountWithConversion: number = 0;
+					const rate: number | undefined =
+						conversionRates[`${selectedAccountCurrency}-${toAccountCurrency}`];
 
-							// Apply conversion rates for each currency
-							if (selectedAccountCurrency === "EUR" && toAccountCurrency === "USD") {
-								amountWithConversion = amount * 1.11;
-							} else if (selectedAccountCurrency === "EUR" && toAccountCurrency === "GBP") {
-								amountWithConversion = amount * 0.89;
-							} else if (selectedAccountCurrency === "USD" && toAccountCurrency === "EUR") {
-								amountWithConversion = amount * 0.9;
-							} else if (selectedAccountCurrency === "USD" && toAccountCurrency === "GBP") {
-								amountWithConversion = amount * 0.8;
-							} else if (selectedAccountCurrency === "GBP" && toAccountCurrency === "USD") {
-								amountWithConversion = amount * 1.25;
-							} else if (selectedAccountCurrency === "GBP" && toAccountCurrency === "EUR") {
-								amountWithConversion = amount * 1.13;
-							}
+					if (toAccount && toAccount.id !== currentAccount.id && rate !== undefined) {
+						try {
+							const amountWithConversion: number = amount * rate;
 
 							// The target account receives the converted amount, the source account is
 							// debited the amount the user asked to exchange in its own currency
