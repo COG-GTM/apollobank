@@ -164,7 +164,7 @@ export class AccountResolver {
 						},
 					});
 
-					if (toAccount) {
+					if (toAccount && toAccount.id !== currentAccount.id) {
 						try {
 							let amountWithConversion: number = 0;
 
@@ -183,19 +183,16 @@ export class AccountResolver {
 								amountWithConversion = amount * 1.13;
 							}
 
-							// Only update the account balances if the current accounts balance doesn't fall below 0 after applying conversion rates
-							if (currentAccount.balance - Math.round(amountWithConversion) >= 0) {
-								await Account.update(
-									{ id: toAccount.id },
-									{ balance: toAccount.balance + Math.round(amountWithConversion) }
-								);
-								await Account.update(
-									{ id: currentAccount.id },
-									{ balance: currentAccount.balance - Math.round(amountWithConversion) }
-								);
-							} else {
-								throw new Error(ErrorMessages.EXCHANGE);
-							}
+							// The target account receives the converted amount, the source account is
+							// debited the amount the user asked to exchange in its own currency
+							await Account.update(
+								{ id: toAccount.id },
+								{ balance: toAccount.balance + Math.round(amountWithConversion) }
+							);
+							await Account.update(
+								{ id: currentAccount.id },
+								{ balance: currentAccount.balance - amount }
+							);
 						} catch (error) {
 							console.log(error);
 							throw new Error(ErrorMessages.EXCHANGE);
