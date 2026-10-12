@@ -112,7 +112,7 @@ export const Chart: React.FC<ChartProps> = ({ currency }) => {
             <AreaChart
                 data={chartData}
                 margin={{
-                    top: 24,
+                    top: 40,
                     right: 30,
                     left: 20,
                     bottom: 5,
@@ -122,7 +122,7 @@ export const Chart: React.FC<ChartProps> = ({ currency }) => {
                 <XAxis dataKey="date" />
                 <YAxis tickFormatter={(value: number) => formatAxisValue(value)} width={80} />
                 <Tooltip formatter={(value: number) => formatTooltipValue(value)} />
-                <Legend />
+                <Legend verticalAlign="top" wrapperStyle={{ top: 0 }} />
                 <Area
                     type="monotone"
                     dataKey="moneyOut"
