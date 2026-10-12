@@ -38,6 +38,13 @@ export type Card = {
   monthlySpendingLimit: Scalars['Float'],
 };
 
+export type DailySpend = {
+   __typename?: 'DailySpend',
+  date: Scalars['String'],
+  moneyIn: Scalars['Float'],
+  moneyOut: Scalars['Float'],
+};
+
 
 export type LoginResponse = {
    __typename?: 'LoginResponse',
@@ -126,6 +133,7 @@ export type Query = {
   account: Account,
   transactions: Array<Transaction>,
   cards: Array<Card>,
+  spendingInsights?: Maybe<SpendingInsights>,
 };
 
 
@@ -136,6 +144,32 @@ export type QueryAccountArgs = {
 
 export type QueryTransactionsArgs = {
   currency: Scalars['String']
+};
+
+
+export type QuerySpendingInsightsArgs = {
+  days?: Maybe<Scalars['Int']>,
+  currency: Scalars['String']
+};
+
+export type SpendingCategory = {
+   __typename?: 'SpendingCategory',
+  transactionType: Scalars['String'],
+  total: Scalars['Float'],
+  count: Scalars['Int'],
+  share: Scalars['Float'],
+};
+
+export type SpendingInsights = {
+   __typename?: 'SpendingInsights',
+  currency: Scalars['String'],
+  totalIn: Scalars['Float'],
+  totalOut: Scalars['Float'],
+  net: Scalars['Float'],
+  largestTransaction?: Maybe<Transaction>,
+  changeVsPreviousPeriodPct?: Maybe<Scalars['Float']>,
+  categories: Array<SpendingCategory>,
+  daily: Array<DailySpend>,
 };
 
 export type Transaction = {
@@ -330,6 +364,30 @@ export type RegisterMutationVariables = {
 export type RegisterMutation = (
   { __typename?: 'Mutation' }
   & Pick<Mutation, 'register'>
+);
+
+export type SpendingInsightsQueryVariables = {
+  currency: Scalars['String'],
+  days?: Maybe<Scalars['Int']>
+};
+
+
+export type SpendingInsightsQuery = (
+  { __typename?: 'Query' }
+  & { spendingInsights?: Maybe<(
+    { __typename?: 'SpendingInsights' }
+    & Pick<SpendingInsights, 'currency' | 'totalIn' | 'totalOut' | 'net' | 'changeVsPreviousPeriodPct'>
+    & { largestTransaction?: Maybe<(
+      { __typename?: 'Transaction' }
+      & Pick<Transaction, 'id' | 'transactionType' | 'date' | 'amount'>
+    )>, categories: Array<(
+      { __typename?: 'SpendingCategory' }
+      & Pick<SpendingCategory, 'transactionType' | 'total' | 'count' | 'share'>
+    )>, daily: Array<(
+      { __typename?: 'DailySpend' }
+      & Pick<DailySpend, 'date' | 'moneyIn' | 'moneyOut'>
+    )> }
+  )> }
 );
 
 export type TransactionsQueryVariables = {
@@ -839,6 +897,61 @@ export function useRegisterMutation(baseOptions?: ApolloReactHooks.MutationHookO
 export type RegisterMutationHookResult = ReturnType<typeof useRegisterMutation>;
 export type RegisterMutationResult = ApolloReactCommon.MutationResult<RegisterMutation>;
 export type RegisterMutationOptions = ApolloReactCommon.BaseMutationOptions<RegisterMutation, RegisterMutationVariables>;
+export const SpendingInsightsDocument = gql`
+    query SpendingInsights($currency: String!, $days: Int) {
+  spendingInsights(currency: $currency, days: $days) {
+    currency
+    totalIn
+    totalOut
+    net
+    changeVsPreviousPeriodPct
+    largestTransaction {
+      id
+      transactionType
+      date
+      amount
+    }
+    categories {
+      transactionType
+      total
+      count
+      share
+    }
+    daily {
+      date
+      moneyIn
+      moneyOut
+    }
+  }
+}
+    `;
+
+/**
+ * __useSpendingInsightsQuery__
+ *
+ * To run a query within a React component, call `useSpendingInsightsQuery` and pass it any options that fit your needs.
+ * When your component renders, `useSpendingInsightsQuery` returns an object from Apollo Client that contains loading, error, and data properties 
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useSpendingInsightsQuery({
+ *   variables: {
+ *      currency: // value for 'currency'
+ *      days: // value for 'days'
+ *   },
+ * });
+ */
+export function useSpendingInsightsQuery(baseOptions?: ApolloReactHooks.QueryHookOptions<SpendingInsightsQuery, SpendingInsightsQueryVariables>) {
+        return ApolloReactHooks.useQuery<SpendingInsightsQuery, SpendingInsightsQueryVariables>(SpendingInsightsDocument, baseOptions);
+      }
+export function useSpendingInsightsLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<SpendingInsightsQuery, SpendingInsightsQueryVariables>) {
+          return ApolloReactHooks.useLazyQuery<SpendingInsightsQuery, SpendingInsightsQueryVariables>(SpendingInsightsDocument, baseOptions);
+        }
+export type SpendingInsightsQueryHookResult = ReturnType<typeof useSpendingInsightsQuery>;
+export type SpendingInsightsLazyQueryHookResult = ReturnType<typeof useSpendingInsightsLazyQuery>;
+export type SpendingInsightsQueryResult = ApolloReactCommon.QueryResult<SpendingInsightsQuery, SpendingInsightsQueryVariables>;
 export const TransactionsDocument = gql`
     query Transactions($currency: String!) {
   transactions(currency: $currency) {

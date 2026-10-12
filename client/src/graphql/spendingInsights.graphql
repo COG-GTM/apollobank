@@ -1,0 +1,12 @@
+query SpendingInsights($currency: String!, $days: Int) {
+    spendingInsights(currency: $currency, days: $days) {
+        currency
+        totalIn
+        totalOut
+        net
+        changeVsPreviousPeriodPct
+        largestTransaction { id transactionType date amount }
+        categories { transactionType total count share }
+        daily { date moneyIn moneyOut }
+    }
+}
