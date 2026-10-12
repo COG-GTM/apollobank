@@ -147,7 +147,7 @@ export const Chart: React.FC<ChartProps> = ({ currency }) => {
         <div className={classes.root}>
             <div className={classes.spending}>Spending (this month)</div>
             <div className={classes.chartArea}>
-                {!loading && !!data && chartData.length === 0 ? renderEmptyState() : renderChart()}
+                {!loading && transactions.length === 0 ? renderEmptyState() : renderChart()}
             </div>
         </div>
     );
