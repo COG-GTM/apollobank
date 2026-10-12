@@ -73,6 +73,8 @@ export const SpendingInsights: React.FC<SpendingInsightsProps> = ({ currency }) 
     // GraphQL queries
     const { data, loading, error } = useSpendingInsightsQuery({
         variables: { currency: currency, days: INSIGHTS_DAYS },
+        // Time-windowed totals: always revalidate so new transactions show on remount
+        fetchPolicy: 'cache-and-network',
     });
 
     const classes = useSpendingInsightsStyles();
@@ -89,7 +91,7 @@ export const SpendingInsights: React.FC<SpendingInsightsProps> = ({ currency }) 
         <div className={classes.title}>Spending Insights (last {INSIGHTS_DAYS} days)</div>
     );
 
-    if (loading) {
+    if (loading && !data) {
         return (
             <div className={classes.root} data-testid="spending-insights-loading">
                 {renderTitle()}
@@ -127,7 +129,7 @@ export const SpendingInsights: React.FC<SpendingInsightsProps> = ({ currency }) 
 
     const insights = data ? data.spendingInsights : null;
 
-    if (!insights || (insights.totalIn === 0 && insights.totalOut === 0)) {
+    if (!insights || !insights.largestTransaction) {
         return (
             <div className={classes.root}>
                 {renderTitle()}

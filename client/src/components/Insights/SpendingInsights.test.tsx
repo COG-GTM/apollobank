@@ -71,6 +71,7 @@ describe('SpendingInsights', () => {
         // Assert
         expect(mockUseSpendingInsightsQuery).toHaveBeenCalledWith({
             variables: { currency: 'USD', days: 30 },
+            fetchPolicy: 'cache-and-network',
         });
     });
 
@@ -149,6 +150,37 @@ describe('SpendingInsights', () => {
         // Assert
         expect(screen.getByText(/No transactions in the last 30 days yet/)).toBeInTheDocument();
         expect(screen.queryByText('Total in')).not.toBeInTheDocument();
+    });
+
+    it('renders the KPI tiles when the window only has transactions outside in/out (e.g. transfers)', () => {
+        // Arrange
+        mockUseSpendingInsightsQuery.mockReturnValue({
+            data: {
+                spendingInsights: {
+                    ...insightsFixture,
+                    totalIn: 0,
+                    totalOut: 0,
+                    net: 0,
+                    largestTransaction: {
+                        id: 9,
+                        transactionType: 'transfer',
+                        date: '2026-10-01T10:00:00.000Z',
+                        amount: '25',
+                    },
+                    changeVsPreviousPeriodPct: null,
+                    categories: [],
+                },
+            },
+            loading: false,
+        });
+
+        // Act
+        render(<SpendingInsights currency="EUR" />);
+
+        // Assert
+        expect(screen.queryByText(/No transactions in the last 30 days yet/)).not.toBeInTheDocument();
+        expect(screen.getByText('transfer')).toBeInTheDocument();
+        expect(screen.getByText('No spending in this period.')).toBeInTheDocument();
     });
 
     it('renders the empty state when spendingInsights is null', () => {
