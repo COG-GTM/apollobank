@@ -1,3 +1,4 @@
+import { InMemoryCache } from '@apollo/client';
 import { MockedProvider, MockedResponse } from '@apollo/client/testing';
 import { render, screen } from '@testing-library/react';
 import React from 'react';
@@ -185,5 +186,53 @@ describe('SpendingInsights', () => {
         expect(await screen.findByRole('alert')).toHaveTextContent(
             "Couldn't load spending insights",
         );
+    });
+
+    it('shows "No spending in this period" when money-out categories add up to zero', async () => {
+        // Arrange
+        const insights = buildInsights({
+            totalOut: 0,
+            net: 1500,
+            categories: [
+                {
+                    __typename: 'SpendingCategory',
+                    transactionType: 'payment',
+                    total: 0,
+                    count: 1,
+                    share: 0,
+                },
+            ],
+        });
+
+        // Act
+        renderPanel([successMock(insights)]);
+
+        // Assert
+        expect(await screen.findByText('No spending in this period')).toBeInTheDocument();
+    });
+
+    it('keeps cached figures but flags a failed refresh', async () => {
+        // Arrange
+        const cache = new InMemoryCache();
+        cache.writeQuery({
+            query: SpendingInsightsDocument,
+            variables: { currency: 'EUR', days: 30 },
+            data: { spendingInsights: buildInsights() },
+        });
+        const errorMock: MockedResponse = {
+            request: { query: SpendingInsightsDocument, variables: { currency: 'EUR', days: 30 } },
+            error: new Error('Network down'),
+        };
+
+        // Act
+        render(
+            <MockedProvider mocks={[errorMock]} cache={cache}>
+                <SpendingInsights currency="EUR" />
+            </MockedProvider>,
+        );
+
+        // Assert
+        expect(await screen.findByText(/Couldn't refresh spending insights/)).toBeInTheDocument();
+        expect(screen.getByText(money(1500))).toBeInTheDocument();
     });
 });

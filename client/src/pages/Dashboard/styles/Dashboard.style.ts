@@ -30,7 +30,7 @@ export const useDashboardStyles = makeStyles(theme => ({
     },
     chart: {
         height: 'auto',
-        overflow: 'visible',
+        overflow: 'hidden',
     },
     apolloCard: {
         backgroundColor: ColorScheme.ORANGE,

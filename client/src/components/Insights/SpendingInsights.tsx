@@ -157,6 +157,11 @@ export const SpendingInsights: React.FC<SpendingInsightsProps> = ({ currency, da
     return (
         <div className={classes.root} data-testid="spending-insights">
             {header}
+            {error && (
+                <div className={classes.refreshError} role="alert">
+                    Couldn't refresh spending insights. Showing the last loaded figures.
+                </div>
+            )}
             <div className={classes.kpis}>
                 {kpis.map((kpi) => (
                     <div key={kpi.label} className={classes.kpi} data-testid="spending-kpi">
@@ -172,7 +177,7 @@ export const SpendingInsights: React.FC<SpendingInsightsProps> = ({ currency, da
                 <div className={classes.chartBox}>
                     <div className={classes.chartTitle}>Spending by type</div>
                     <div className={classes.chartBody}>
-                        {pieData.length === 0 ? (
+                        {totalOut <= 0 || pieData.length === 0 ? (
                             <div className={classes.message}>No spending in this period</div>
                         ) : (
                             <ResponsiveContainer width="100%" height="100%">

@@ -108,4 +108,9 @@ export const useSpendingInsightsStyles = createUseStyles({
     error: {
         color: ColorScheme.ORANGE,
     },
+    refreshError: {
+        color: ColorScheme.ORANGE,
+        fontSize: 13,
+        marginBottom: 12,
+    },
 });
