@@ -13,6 +13,7 @@ import { sendRefreshToken } from "./utils/sendRefreshToken";
 import { createTypeOrmConnection } from "./utils/createTypeOrmConnection";
 import { createConnection } from "typeorm";
 import { CardResolver } from "./resolvers/CardResolver";
+import { InsightsResolver } from "./resolvers/InsightsResolver";
 import "dotenv/config";
 import "reflect-metadata";
 
@@ -71,7 +72,7 @@ import "reflect-metadata";
 
 	const appolloServer: ApolloServer = new ApolloServer({
 		schema: await buildSchema({
-			resolvers: [UserResolver, AccountResolver, TransactionResolver, CardResolver],
+			resolvers: [UserResolver, AccountResolver, TransactionResolver, CardResolver, InsightsResolver],
 		}),
 		introspection: true,
 		playground: true,
