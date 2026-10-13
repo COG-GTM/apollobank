@@ -22,6 +22,7 @@ import { AccountsCard, NoAccountsCard } from '../../components/Cards/AccountsCar
 import { ApolloCard, NoApolloCard } from '../../components/Cards/ApolloCard';
 import { Chart } from '../../components/Charts/Chart';
 import { Dialog } from '../../components/Dialog/Dialog';
+import { SpendingInsights } from '../../components/Insights/SpendingInsights';
 import { Loading } from '../../components/Loading/Loading';
 import { Title } from '../../components/Typography/Title';
 import {
@@ -295,6 +296,13 @@ export const Dashboard: React.FC = () => {
                                 <Chart currency={!!analyticsAccount ? analyticsAccount : 'EUR'} />
                             </Paper>
                         </Grid>
+                        {data.accounts.length > 0 && !!analyticsAccount && (
+                            <Grid item xs={12}>
+                                <Paper className={classes.paper}>
+                                    <SpendingInsights currency={analyticsAccount} />
+                                </Paper>
+                            </Grid>
+                        )}
                     </Grid>
                 </Container>
                 <Container maxWidth="lg" className={classes.container}>
