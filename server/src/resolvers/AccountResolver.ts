@@ -16,6 +16,7 @@ import { User } from "../entity/User";
 import { Account } from "../entity/Account";
 import { createRandomSortCode, createRandomIbanCode } from "../utils/createRandom";
 import { SuccessMessages } from "../utils/messages";
+import { convert } from "../utils/fx";
 
 @ObjectType()
 class AccountResponse {
@@ -166,22 +167,11 @@ export class AccountResolver {
 
 					if (toAccount) {
 						try {
-							let amountWithConversion: number = 0;
-
-							// Apply conversion rates for each currency
-							if (selectedAccountCurrency === "EUR" && toAccountCurrency === "USD") {
-								amountWithConversion = amount * 1.11;
-							} else if (selectedAccountCurrency === "EUR" && toAccountCurrency === "GBP") {
-								amountWithConversion = amount * 0.89;
-							} else if (selectedAccountCurrency === "USD" && toAccountCurrency === "EUR") {
-								amountWithConversion = amount * 0.9;
-							} else if (selectedAccountCurrency === "USD" && toAccountCurrency === "GBP") {
-								amountWithConversion = amount * 0.8;
-							} else if (selectedAccountCurrency === "GBP" && toAccountCurrency === "USD") {
-								amountWithConversion = amount * 1.25;
-							} else if (selectedAccountCurrency === "GBP" && toAccountCurrency === "EUR") {
-								amountWithConversion = amount * 1.13;
-							}
+							const amountWithConversion: number = convert(
+								amount,
+								selectedAccountCurrency,
+								toAccountCurrency
+							);
 
 							// Only update the account balances if the current accounts balance doesn't fall below 0 after applying conversion rates
 							if (currentAccount.balance - Math.round(amountWithConversion) >= 0) {
