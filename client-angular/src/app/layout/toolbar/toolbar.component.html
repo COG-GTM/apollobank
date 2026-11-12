@@ -1,0 +1,23 @@
+<header class="toolbar">
+    <nav class="navigation">
+        <div class="toggle-button">
+            <app-drawer-toggle-button (toggle)="drawerToggle.emit()" />
+        </div>
+        <div class="logo">
+            <a routerLink="/"><span role="img" aria-label="logo">🚀</span></a>
+        </div>
+        <div class="spacer"></div>
+        <div class="navigation-items">
+            <ul>
+                @if (session.isAuthenticated$ | async) {
+                    <li><a routerLink="/dashboard">Dashboard</a></li>
+                    <li><a routerLink="/settings">Settings</a></li>
+                    <button class="nav-button" (click)="session.logout()">Logout</button>
+                } @else {
+                    <button class="nav-button" routerLink="/login">Login</button>
+                    <button class="nav-button" routerLink="/register">Sign Up</button>
+                }
+            </ul>
+        </div>
+    </nav>
+</header>

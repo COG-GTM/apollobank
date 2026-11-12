@@ -1,0 +1,24 @@
+@use '@angular/material' as mat;
+
+html {
+    height: 100%;
+    @include mat.theme((color: (primary: mat.$cyan-palette, theme-type: light), typography: 'Source Sans Pro', density: 0));
+}
+
+body {
+    margin: 0;
+    font-family: 'Source Sans Pro', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background-color: snow;
+    height: 100%;
+}
+
+app-root {
+    display: block;
+    height: 100%;
+}
+
+code {
+    font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
+}
