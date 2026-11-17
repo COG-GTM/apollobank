@@ -1,5 +1,5 @@
-mutation AddMoney($amount: Float!, $currency: String!) {
-    addMoney(amount: $amount, currency: $currency) {
+mutation AddMoney($amount: Float!, $id: Int!) {
+    addMoney(amount: $amount, id: $id) {
         account {
             id
             balance

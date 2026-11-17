@@ -50,7 +50,7 @@ import { Transactions } from './Transactions/Transactions';
 
 export const Account: React.FC = () => {
     // State
-    const [toAccountCurrency, setToAccountCurrency] = useState<string>('');
+    const [toAccountId, setToAccountId] = useState<string>('');
     const [accountBalance, setAccountBalance] = useState<number>(0);
     const [openAddDialog, setOpenAddDialog] = useState<boolean>(false);
     const [openExchangeDialog, setOpenExchangeDialog] = useState<boolean>(false);
@@ -147,7 +147,7 @@ export const Account: React.FC = () => {
         try {
             const response = await createTransaction({
                 variables: {
-                    currency: currency,
+                    id: accountId,
                 },
                 refetchQueries: [
                     {
@@ -184,7 +184,7 @@ export const Account: React.FC = () => {
                                 const response = await addMoney({
                                     variables: {
                                         amount: data.amount,
-                                        currency: currency,
+                                        id: accountId,
                                     },
                                 });
 
@@ -241,12 +241,12 @@ export const Account: React.FC = () => {
                             setSubmitting(true);
 
                             // If the user has selected a currency account to exchange to, call the exchange mutation
-                            if (toAccountCurrency !== '') {
+                            if (toAccountId !== '') {
                                 try {
                                     const response = await exchange({
                                         variables: {
-                                            selectedAccountCurrency: currency,
-                                            toAccountCurrency: toAccountCurrency,
+                                            selectedAccountId: accountId,
+                                            toAccountId: Number(toAccountId),
                                             amount: data.amount,
                                         },
                                     });
@@ -281,11 +281,11 @@ export const Account: React.FC = () => {
                                             <Select
                                                 labelId="select-filled-label"
                                                 id="select-filled"
-                                                value={toAccountCurrency}
+                                                value={toAccountId}
                                                 onChange={(
                                                     event: ChangeEvent<{ value: unknown }>,
                                                 ) => {
-                                                    setToAccountCurrency(
+                                                    setToAccountId(
                                                         event.target.value as string,
                                                     );
                                                 }}
@@ -303,7 +303,7 @@ export const Account: React.FC = () => {
                                                             return (
                                                                 <MenuItem
                                                                     key={account.id}
-                                                                    value={account.currency}
+                                                                    value={String(account.id)}
                                                                 >
                                                                     {account.currency}
                                                                 </MenuItem>
@@ -352,7 +352,7 @@ export const Account: React.FC = () => {
                                     try {
                                         const response = await deleteAccount({
                                             variables: {
-                                                currency: currency,
+                                                id: accountId,
                                             },
                                         });
 

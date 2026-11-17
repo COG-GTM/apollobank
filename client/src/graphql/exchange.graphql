@@ -1,7 +1,7 @@
-mutation Exchange($selectedAccountCurrency: String!, $toAccountCurrency: String!, $amount: Float!) {
+mutation Exchange($selectedAccountId: Int!, $toAccountId: Int!, $amount: Float!) {
     exchange(
-        selectedAccountCurrency: $selectedAccountCurrency
-        toAccountCurrency: $toAccountCurrency
+        selectedAccountId: $selectedAccountId
+        toAccountId: $toAccountId
         amount: $amount
     ) {
         account {
