@@ -10,6 +10,7 @@ import {
 	Arg,
 	ObjectType,
 	Field,
+	Int,
 } from "type-graphql";
 import { MyContext } from "../MyContext";
 import { User } from "../entity/User";
@@ -49,14 +50,14 @@ export class AccountResolver {
 	}
 
 	/**
-	 * Used to query and find a single account specified by the currency (EUR account, USD account or GBP account)
-	 * @param currency
+	 * Used to query and find a single account of the authenticated user by its id
+	 * @param id
 	 * @param param1
 	 */
 	@Query(() => Account)
 	@UseMiddleware(isAuth)
 	async account(
-		@Arg("currency") currency: string,
+		@Arg("id", () => Int) id: number,
 		@Ctx() { payload }: MyContext
 	): Promise<Account | undefined> {
 		if (!payload) {
@@ -66,7 +67,7 @@ export class AccountResolver {
 		const owner: User | undefined = await User.findOne({ where: { id: payload.userId } });
 
 		if (owner) {
-			const account = Account.findOne({ where: { owner: owner, currency: currency } });
+			const account = Account.findOne({ where: { id: id, owner: owner } });
 
 			if (account) {
 				return account;

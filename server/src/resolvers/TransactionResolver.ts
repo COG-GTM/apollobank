@@ -3,20 +3,26 @@ import { Transaction } from "./../entity/Transaction";
 import { User } from "./../entity/User";
 import { MyContext } from "./../MyContext";
 import { isAuth } from "../middleware";
-import { Resolver, Query, UseMiddleware, Ctx, Mutation, Arg, Float } from "type-graphql";
+import { Resolver, Query, UseMiddleware, Ctx, Mutation, Arg, Float, Int } from "type-graphql";
 import faker from "faker";
 
 @Resolver()
 export class TransactionResolver {
 	/**
-	 * Query for returning all transactions for an authenticated users currency account
+	 * Query for returning all transactions for one of an authenticated user's accounts,
+	 * looked up by account id, or by currency when no id is given
 	 * @param currency
-	 * @param param1
+	 * @param id
+	 * @param param2
 	 */
 	@Query(() => [Transaction])
 	@UseMiddleware(isAuth)
-	async transactions(@Arg("currency") currency: string, @Ctx() { payload }: MyContext) {
-		if (!payload) {
+	async transactions(
+		@Arg("currency", () => String, { nullable: true }) currency: string | null | undefined,
+		@Arg("id", () => Int, { nullable: true }) id: number | null | undefined,
+		@Ctx() { payload }: MyContext
+	) {
+		if (!payload || (id == null && !currency)) {
 			return null;
 		}
 
@@ -24,7 +30,7 @@ export class TransactionResolver {
 
 		if (owner) {
 			const account: Account | undefined = await Account.findOne({
-				where: { owner: owner, currency: currency },
+				where: id != null ? { id: id, owner: owner } : { owner: owner, currency: currency },
 			});
 
 			if (account) {
