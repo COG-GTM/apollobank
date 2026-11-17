@@ -93,6 +93,10 @@ export class AccountResolver {
 			return null;
 		}
 
+		if (!(amount > 0)) {
+			throw new Error(ErrorMessages.ADD_MONEY_AMOUNT);
+		}
+
 		const owner: User | undefined = await User.findOne({ where: { id: payload.userId } });
 
 		if (owner) {
