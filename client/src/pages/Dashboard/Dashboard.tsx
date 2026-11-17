@@ -39,6 +39,7 @@ import {
 } from '../../generated/graphql';
 import { theme } from '../../utils/theme';
 import { useDashboardStyles } from './styles/Dashboard.style';
+import { formatBalancesByCurrency } from '../../utils/totalBalance';
 
 const GLOBAL_CURRENCIES: string[] = ['EUR', 'USD', 'GBP'];
 
@@ -56,7 +57,7 @@ export const Dashboard: React.FC = () => {
     // State
     const [currencies, setCurrencies] = useState<string[]>(['']);
     const [analyticsAccount, setAnalyticsAccount] = useState<string>('');
-    const [totalBalance, setTotalBalance] = useState<number>(0);
+    const [totalBalance, setTotalBalance] = useState<string>('0');
     const [openDialog, setOpenDialog] = useState<boolean>(false);
 
     const history = useHistory();
@@ -68,29 +69,16 @@ export const Dashboard: React.FC = () => {
         classes.paper + ' ' + classes.accountCardHeight + ' ' + classes.apolloCard;
     const chartPaper = classes.paper + ' ' + classes.chart;
 
-    // When the component mounts, update the total balance for the current user
+    // When the component mounts, update the per-currency total balance for the current user
     // and store the currency accounts in the state array
     useEffect(() => {
         let currencies: string[] = [];
-        let balance: number = 0;
         if (data) {
             data.accounts.forEach((account: Account) => {
-                // apply conversion rates
-                if (account.currency === 'EUR') {
-                    balance += Math.round(account.balance / 1.13);
-                }
-
-                if (account.currency === 'USD') {
-                    balance += Math.round(account.balance / 1.25);
-                }
-
-                if (account.currency === 'GBP') {
-                    balance += Math.round(account.balance * 1);
-                }
                 currencies.push(account.currency);
             });
         }
-        setTotalBalance(balance);
+        setTotalBalance(formatBalancesByCurrency(data ? data.accounts : []));
         setCurrencies(currencies);
     }, [loading, data]);
 
@@ -316,7 +304,7 @@ export const Dashboard: React.FC = () => {
                                 color: 'rgba(0, 0, 0, 0.3)',
                             }}
                         >
-                            Total balance: £{totalBalance}
+                            Total balance: {totalBalance}
                         </div>
                     </div>
                     <Grid container spacing={3}>
