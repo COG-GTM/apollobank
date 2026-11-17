@@ -5,6 +5,7 @@ export enum SuccessMessages {
 
 export enum ErrorMessages {
 	ADD_MONEY = "Failed to top up your account",
+	ADD_MONEY_AMOUNT = "The amount to top up must be greater than 0.",
 	EXCHANGE = "You do not have the sufficient funds to make this exchange.",
 	LOGIN = "Invalid login.",
 	PASSWORD = "Invalid password.",
