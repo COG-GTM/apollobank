@@ -2,13 +2,10 @@ import { formatCardExpiry } from './formatCardExpiry';
 
 describe('formatCardExpiry', () => {
     it.each([
-        ['January', new Date(2028, 0, 15), '01/28'],
-        ['October', new Date(2023, 9, 1), '10/23'],
-        ['December', new Date(2030, 11, 31), '12/30'],
-    ])('formats a card expiring in %s as MM/YY', (_label, expiry, expected) => {
-        // Arrange
-        const expiresIn = expiry.toISOString();
-
+        ['January', '2028-01-15T12:00:00.000Z', '01/28'],
+        ['October', '2023-10-15T12:00:00.000Z', '10/23'],
+        ['December', '2030-12-15T12:00:00.000Z', '12/30'],
+    ])('formats a card expiring in %s as MM/YY', (_label, expiresIn, expected) => {
         // Act
         const result = formatCardExpiry(expiresIn);
 
@@ -16,9 +13,20 @@ describe('formatCardExpiry', () => {
         expect(result).toBe(expected);
     });
 
-    it('accepts the timestamp string the cards query returns', () => {
+    it('keeps the month of a midnight-on-the-1st UTC expiry in any browser timezone', () => {
         // Arrange
-        const expiresIn = new Date(2028, 0, 15, 12).toString();
+        const expiresIn = '2023-10-01T00:00:00.000Z';
+
+        // Act
+        const result = formatCardExpiry(expiresIn);
+
+        // Assert
+        expect(result).toBe('10/23');
+    });
+
+    it('keeps the year of a New Year midnight UTC expiry in any browser timezone', () => {
+        // Arrange
+        const expiresIn = '2028-01-01T00:00:00.000Z';
 
         // Act
         const result = formatCardExpiry(expiresIn);
