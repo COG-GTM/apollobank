@@ -13,7 +13,7 @@ import InfoOutlinedIcon from '@material-ui/icons/InfoOutlined';
 import SwapVert from '@material-ui/icons/SwapVert';
 import { Form, Formik } from 'formik';
 import React, { ChangeEvent, MouseEvent, useEffect, useState } from 'react';
-import { useHistory, useLocation } from 'react-router-dom';
+import { useHistory, useLocation, useParams } from 'react-router-dom';
 import { ReactComponent as Dollar } from '../../assets/flag.svg';
 import { ReactComponent as Pound } from '../../assets/uk.svg';
 import { ReactComponent as Euro } from '../../assets/world.svg';
@@ -44,6 +44,7 @@ import {
 } from '../../generated/graphql';
 import { addMoneyValidationSchema } from '../../schemas /addMoneyValidationSchema';
 import { theme } from '../../utils/theme';
+import { accountFromRoute } from './accountFromRoute';
 import { useAccountStyles } from './styles/Account.style';
 import { Transactions } from './Transactions/Transactions';
 
@@ -63,6 +64,7 @@ export const Account: React.FC = () => {
 
     const location = useLocation<any>();
     const history = useHistory();
+    const { id } = useParams<{ id: string }>();
 
     // GraphQL Mutations
     const [createTransaction]: MutationTuple<
@@ -78,13 +80,17 @@ export const Account: React.FC = () => {
 
     // GraphQL Queries
     const user = useMeQuery();
-    const account = useAccountQuery({
-        variables: { currency: location.state.currency },
-    });
     const accounts = useAccountsQuery();
+    const routeAccount = accountFromRoute(location.state, accounts.data?.accounts, id);
+    const currency: string = routeAccount ? routeAccount.currency : '';
+    const account = useAccountQuery({
+        variables: { currency },
+        skip: !currency,
+    });
     const cards = useCardsQuery();
     const { data } = useTransactionsQuery({
-        variables: { currency: location.state.currency },
+        variables: { currency },
+        skip: !currency,
     });
 
     const classes = useAccountStyles();
@@ -98,9 +104,9 @@ export const Account: React.FC = () => {
         if (account.data) {
             setAccountBalance(account.data.account.balance);
         } else {
-            setAccountBalance(location.state.balance);
+            setAccountBalance(routeAccount ? routeAccount.balance : 0);
         }
-    }, [account, location]);
+    }, [account, routeAccount]);
 
     // When the component mounts, check if a card exists for the account
     useEffect(() => {
@@ -118,7 +124,7 @@ export const Account: React.FC = () => {
         }
     }, [accountBalance]);
 
-    switch (location.state.currency) {
+    switch (currency) {
         case 'EUR':
             currencyIcon = '€';
             currencyFullText = 'Euro';
@@ -140,13 +146,13 @@ export const Account: React.FC = () => {
         try {
             const response = await createTransaction({
                 variables: {
-                    currency: location.state.currency,
+                    currency: currency,
                 },
                 refetchQueries: [
                     {
                         query: TransactionsDocument,
                         variables: {
-                            currency: location.state.currency,
+                            currency: currency,
                         },
                     },
                 ],
@@ -177,7 +183,7 @@ export const Account: React.FC = () => {
                                 const response = await addMoney({
                                     variables: {
                                         amount: data.amount,
-                                        currency: location.state.currency,
+                                        currency: currency,
                                     },
                                 });
 
@@ -238,7 +244,7 @@ export const Account: React.FC = () => {
                                 try {
                                     const response = await exchange({
                                         variables: {
-                                            selectedAccountCurrency: location.state.currency,
+                                            selectedAccountCurrency: currency,
                                             toAccountCurrency: toAccountCurrency,
                                             amount: data.amount,
                                         },
@@ -289,7 +295,7 @@ export const Account: React.FC = () => {
                                                         .filter((account) => {
                                                             return (
                                                                 account.currency !==
-                                                                location.state.currency
+                                                                currency
                                                             );
                                                         })
                                                         .map((account) => {
@@ -332,8 +338,8 @@ export const Account: React.FC = () => {
             return (
                 <Dialog isOpen={openDetailsDialog} onClose={() => setOpenDetailsDialog(false)}>
                     Beneficiary: {user.data.me.firstName} {user.data.me.lastName} <br />
-                    IBAN: {location.state.iban} <br />
-                    BIC: {location.state.bic}
+                    IBAN: {routeAccount?.iban} <br />
+                    BIC: {routeAccount?.bic}
                     <div style={{ marginTop: 12 }}>
                         <ThemeProvider theme={theme}>
                             <Button
@@ -345,7 +351,7 @@ export const Account: React.FC = () => {
                                     try {
                                         const response = await deleteAccount({
                                             variables: {
-                                                currency: location.state.currency,
+                                                currency: currency,
                                             },
                                         });
 
@@ -395,6 +401,14 @@ export const Account: React.FC = () => {
         }
     };
 
+    if (!routeAccount) {
+        return accounts.loading ? (
+            <Loading />
+        ) : (
+            <ErrorMessage message="This account could not be found." />
+        );
+    }
+
     if (!showLoadingIcon) {
         return (
             <div className={classes.root}>
@@ -440,7 +454,7 @@ export const Account: React.FC = () => {
                 <div className={classes.accountInfo}>
                     <div>{currencyFullText}</div>
                     <div style={{ width: 32 }}>{svg}</div>
-                    <div>{location.state.currency}</div>
+                    <div>{currency}</div>
                 </div>
 
                 <div className={classes.accountButtonsSection}>
