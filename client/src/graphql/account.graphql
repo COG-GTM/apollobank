@@ -1,5 +1,5 @@
-query Account($currency: String!) {
-    account(currency: $currency) {
+query Account($id: Int!) {
+    account(id: $id) {
         id
         balance
     }

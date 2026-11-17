@@ -83,14 +83,15 @@ export const Account: React.FC = () => {
     const accounts = useAccountsQuery();
     const routeAccount = accountFromRoute(location.state, accounts.data?.accounts, id);
     const currency: string = routeAccount ? routeAccount.currency : '';
+    const accountId: number = Number(id);
     const account = useAccountQuery({
-        variables: { currency },
-        skip: !currency,
+        variables: { id: accountId },
+        skip: !routeAccount,
     });
     const cards = useCardsQuery();
     const { data } = useTransactionsQuery({
-        variables: { currency },
-        skip: !currency,
+        variables: { id: accountId },
+        skip: !routeAccount,
     });
 
     const classes = useAccountStyles();
@@ -152,7 +153,7 @@ export const Account: React.FC = () => {
                     {
                         query: TransactionsDocument,
                         variables: {
-                            currency: currency,
+                            id: accountId,
                         },
                     },
                 ],

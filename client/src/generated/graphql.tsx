@@ -130,12 +130,13 @@ export type Query = {
 
 
 export type QueryAccountArgs = {
-  currency: Scalars['String']
+  id: Scalars['Int']
 };
 
 
 export type QueryTransactionsArgs = {
-  currency: Scalars['String']
+  currency?: Maybe<Scalars['String']>,
+  id?: Maybe<Scalars['Int']>
 };
 
 export type Transaction = {
@@ -160,7 +161,7 @@ export type User = {
 };
 
 export type AccountQueryVariables = {
-  currency: Scalars['String']
+  id: Scalars['Int']
 };
 
 
@@ -333,7 +334,8 @@ export type RegisterMutation = (
 );
 
 export type TransactionsQueryVariables = {
-  currency: Scalars['String']
+  currency?: Maybe<Scalars['String']>,
+  id?: Maybe<Scalars['Int']>
 };
 
 
@@ -358,8 +360,8 @@ export type UpdatePasswordMutation = (
 
 
 export const AccountDocument = gql`
-    query Account($currency: String!) {
-  account(currency: $currency) {
+    query Account($id: Int!) {
+  account(id: $id) {
     id
     balance
   }
@@ -378,7 +380,7 @@ export const AccountDocument = gql`
  * @example
  * const { data, loading, error } = useAccountQuery({
  *   variables: {
- *      currency: // value for 'currency'
+ *      id: // value for 'id'
  *   },
  * });
  */
@@ -840,8 +842,8 @@ export type RegisterMutationHookResult = ReturnType<typeof useRegisterMutation>;
 export type RegisterMutationResult = ApolloReactCommon.MutationResult<RegisterMutation>;
 export type RegisterMutationOptions = ApolloReactCommon.BaseMutationOptions<RegisterMutation, RegisterMutationVariables>;
 export const TransactionsDocument = gql`
-    query Transactions($currency: String!) {
-  transactions(currency: $currency) {
+    query Transactions($currency: String, $id: Int) {
+  transactions(currency: $currency, id: $id) {
     id
     transactionType
     date
@@ -863,6 +865,7 @@ export const TransactionsDocument = gql`
  * const { data, loading, error } = useTransactionsQuery({
  *   variables: {
  *      currency: // value for 'currency'
+ *      id: // value for 'id'
  *   },
  * });
  */

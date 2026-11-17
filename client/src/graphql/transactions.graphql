@@ -1,5 +1,5 @@
-query Transactions($currency: String!) {
-    transactions(currency: $currency) {
+query Transactions($currency: String, $id: Int) {
+    transactions(currency: $currency, id: $id) {
         id
         transactionType
         date

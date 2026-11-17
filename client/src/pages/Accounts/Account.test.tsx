@@ -89,7 +89,26 @@ describe('Account page', () => {
         // Assert
         expect(screen.getByText('Euro')).toBeInTheDocument();
         expect(mocked.useAccountQuery).toHaveBeenLastCalledWith({
-            variables: { currency: 'EUR' },
+            variables: { id: 1 },
+            skip: false,
+        });
+    });
+
+    it('queries the account by route id, so two accounts in one currency stay distinct', () => {
+        // Arrange
+        const firstUsd = { id: 1, currency: 'USD', balance: 1000, iban: 'IBAN-1', bic: 'BIC-1' };
+        const secondUsd = { id: 2, currency: 'USD', balance: 20506, iban: 'IBAN-2', bic: 'BIC-2' };
+        mocked.useAccountsQuery.mockReturnValue({
+            data: { accounts: [firstUsd, secondUsd] },
+            loading: false,
+        } as any);
+
+        // Act
+        renderAt('/accounts/1');
+
+        // Assert
+        expect(mocked.useAccountQuery).toHaveBeenLastCalledWith({
+            variables: { id: 1 },
             skip: false,
         });
     });
@@ -118,7 +137,7 @@ describe('Account page', () => {
         // Assert
         expect(screen.getByText('This account could not be found.')).toBeInTheDocument();
         expect(mocked.useAccountQuery).toHaveBeenLastCalledWith({
-            variables: { currency: '' },
+            variables: { id: 99 },
             skip: true,
         });
     });
