@@ -24,6 +24,6 @@
 		"skipLibCheck": true,
 		"types": ["node", "jest"]
 	},
-	"exclude": ["node_modules"],
+	"exclude": ["node_modules", "./src/**/*.test.ts"],
 	"include": ["./src/**/*.tsx", "./src/**/*.ts"]
 }
