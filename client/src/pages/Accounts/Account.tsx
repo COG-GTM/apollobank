@@ -46,6 +46,7 @@ import { addMoneyValidationSchema } from '../../schemas /addMoneyValidationSchem
 import { theme } from '../../utils/theme';
 import { useAccountStyles } from './styles/Account.style';
 import { Transactions } from './Transactions/Transactions';
+import { formatAccountLabel } from '../../utils/accountLabel';
 
 export const Account: React.FC = () => {
     // State
@@ -298,7 +299,7 @@ export const Account: React.FC = () => {
                                                                     key={account.id}
                                                                     value={account.currency}
                                                                 >
-                                                                    {account.currency}
+                                                                    {formatAccountLabel(account)}
                                                                 </MenuItem>
                                                             );
                                                         })}
