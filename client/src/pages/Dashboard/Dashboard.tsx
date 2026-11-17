@@ -37,6 +37,7 @@ import {
     useCreateAccountMutation,
     useCreateCardMutation,
 } from '../../generated/graphql';
+import { formatCardExpiry } from '../../utils/formatCardExpiry';
 import { theme } from '../../utils/theme';
 import { useDashboardStyles } from './styles/Dashboard.style';
 
@@ -377,16 +378,7 @@ export const Dashboard: React.FC = () => {
                                         <Paper className={apolloCardPaper}>
                                             <ApolloCard
                                                 cardNumber={card.cardNumber}
-                                                validThru={
-                                                    new Date(
-                                                        Date.parse(card.expiresIn),
-                                                    ).getMonth() +
-                                                    '/' +
-                                                    new Date(Date.parse(card.expiresIn))
-                                                        .getFullYear()
-                                                        .toString()
-                                                        .substr(-2)
-                                                }
+                                                validThru={formatCardExpiry(card.expiresIn)}
                                                 cvv={card.cvv}
                                             />
                                         </Paper>
