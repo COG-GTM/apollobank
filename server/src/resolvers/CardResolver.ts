@@ -3,7 +3,6 @@ import { MyContext } from "./../MyContext";
 import { isAuth } from "../middleware";
 import { Resolver, Mutation, UseMiddleware, Ctx, Query } from "type-graphql";
 import { User } from "../entity/User";
-import { Account } from "../entity/Account";
 import { Card } from "../entity/Card";
 
 @Resolver()
@@ -22,12 +21,7 @@ export class CardResolver {
 		const owner: User | undefined = await User.findOne({ where: { id: payload.userId } });
 
 		if (owner) {
-			const account: Account | undefined = await Account.findOne({ where: { owner: owner } });
-
-			if (account) {
-				const cards = await Card.find({ where: { account: account } });
-				return cards;
-			}
+			return Card.find({ where: { owner: owner } });
 		}
 		return null;
 	}
