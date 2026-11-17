@@ -69,11 +69,19 @@ export class UserResolver {
 	}
 
 	/**
-	 * Mutation to revoke the refresh token for a user
+	 * Mutation to revoke the refresh tokens of the signed-in user
 	 * @param userId
 	 */
 	@Mutation(() => Boolean)
-	async revokeRefreshTokensForUser(@Arg("userId", () => Int) userId: number) {
+	@UseMiddleware(isAuth)
+	async revokeRefreshTokensForUser(
+		@Arg("userId", () => Int) userId: number,
+		@Ctx() { payload }: MyContext
+	) {
+		if (!payload || Number(payload.userId) !== userId) {
+			return false;
+		}
+
 		await getConnection().getRepository(User).increment({ id: userId }, "tokenVersion", 1);
 
 		return true;

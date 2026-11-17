@@ -5,11 +5,8 @@ import { UserResolver } from "./resolvers/UserResolver";
 import { AccountResolver } from "./resolvers/AccountResolver";
 import { TransactionResolver } from "./resolvers/TransactionResolver";
 import cookieParser from "cookie-parser";
-import { verify } from "jsonwebtoken";
 import cors from "cors";
-import { User } from "./entity/User";
-import { createAccessToken, createRefreshToken } from "./utils/auth";
-import { sendRefreshToken } from "./utils/sendRefreshToken";
+import { refreshToken } from "./utils/refreshToken";
 import { createTypeOrmConnection } from "./utils/createTypeOrmConnection";
 import { createConnection } from "typeorm";
 import { CardResolver } from "./resolvers/CardResolver";
@@ -34,36 +31,7 @@ import "reflect-metadata";
 		res.send("🚀 Server is running");
 	});
 
-	app.post("/refresh_token", async (req: Request, res: Response) => {
-		const token = req.cookies.jid;
-		if (!token) {
-			return res.send({ ok: false, accessToken: "" });
-		}
-
-		let payload: any = null;
-
-		try {
-			payload = verify(token, process.env.REFRESH_TOKEN_SECRET!);
-		} catch (err) {
-			console.log(err);
-			return res.send({ ok: false, accessToken: "" });
-		}
-
-		// token is valid and can send back access token
-		const user: User | undefined = await User.findOne({ id: payload.userId });
-
-		if (!user) {
-			return res.send({ ok: false, accessToken: "" });
-		}
-
-		if (user.tokenVersion !== payload.tokenVersion) {
-			return res.send({ ok: true, accessToken: createAccessToken(user) });
-		}
-
-		sendRefreshToken(res, createRefreshToken(user));
-
-		return res.send({ ok: true, accessToken: createAccessToken(user) });
-	});
+	app.post("/refresh_token", refreshToken);
 
 	process.env.NODE_ENV === "production"
 		? await createTypeOrmConnection()
