@@ -46,6 +46,7 @@ import { addMoneyValidationSchema } from '../../schemas /addMoneyValidationSchem
 import { theme } from '../../utils/theme';
 import { useAccountStyles } from './styles/Account.style';
 import { Transactions } from './Transactions/Transactions';
+import { getErrorMessage } from '../../utils/errorMessage';
 
 export const Account: React.FC = () => {
     // State
@@ -156,7 +157,7 @@ export const Account: React.FC = () => {
                 setAccountBalance(response.data.createTransaction);
             }
         } catch (error) {
-            const errorMessage: string = (error as Error).message.split(':')[1];
+            const errorMessage: string = getErrorMessage(error);
             console.log(errorMessage);
         }
     };
@@ -187,7 +188,7 @@ export const Account: React.FC = () => {
                                     resetForm();
                                 }
                             } catch (error) {
-                                const errorMessage = (error as Error).message.split(':')[1];
+                                const errorMessage = getErrorMessage(error);
                                 setErrorMessage(errorMessage);
                                 setSubmitting(false);
                             }
@@ -251,9 +252,7 @@ export const Account: React.FC = () => {
                                         resetForm();
                                     }
                                 } catch (error) {
-                                    const errorMessage: string = (error as Error).message.split(
-                                        ':',
-                                    )[1];
+                                    const errorMessage: string = getErrorMessage(error);
                                     setErrorMessage(errorMessage);
                                     setSubmitting(false);
                                 }
@@ -357,9 +356,7 @@ export const Account: React.FC = () => {
                                             }, 3000);
                                         }
                                     } catch (error) {
-                                        const warning: string = (error as Error).message.split(
-                                            ':',
-                                        )[1];
+                                        const warning: string = getErrorMessage(error);
                                         setWarningMessage(warning);
                                     }
                                 }}
