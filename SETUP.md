@@ -56,15 +56,12 @@ npm run dev
 
 Server listens on `http://localhost:4000` (GraphQL at `/graphql`, playground enabled).
 
-> **Note:** the `preinstall` hook runs `npx npm-force-resolutions`. It needs network access on first install.
-
 ## 3. Client
 
 ```bash
 cd client
 npm install
 
-NODE_OPTIONS=--openssl-legacy-provider \
 TSC_COMPILE_ON_ERROR=true \
 ESLINT_NO_DEV_ERRORS=true \
 npm start
@@ -74,7 +71,7 @@ App opens at `http://localhost:3000`.
 
 ### Why those env flags?
 
-- `NODE_OPTIONS=--openssl-legacy-provider` — `react-scripts@4` uses Webpack 4, whose hashing breaks on Node 17+ OpenSSL.
+- `--openssl-legacy-provider` is already passed by the client's `start` and `build` scripts — `react-scripts@4` uses Webpack 4, whose hashing breaks on Node 17+ OpenSSL.
 - `TSC_COMPILE_ON_ERROR=true` + `ESLINT_NO_DEV_ERRORS=true` — the codebase has pre-existing TS errors (Apollo v2→v3 migration leftovers); these flags let the dev server serve while warnings are reported.
 
 You can put these in `client/.env.development.local` to avoid prefixing every command:
@@ -83,8 +80,6 @@ You can put these in `client/.env.development.local` to avoid prefixing every co
 TSC_COMPILE_ON_ERROR=true
 ESLINT_NO_DEV_ERRORS=true
 ```
-
-(`NODE_OPTIONS` must still be exported in the shell — CRA doesn't read it from `.env`.)
 
 ## 4. First-time use
 
@@ -97,11 +92,10 @@ ESLINT_NO_DEV_ERRORS=true
 | Symptom | Fix |
 |---|---|
 | Blank page, console: `Cannot read properties of undefined (reading 'bind')` in `useQuery.ts` | Apollo v2/v3 client mismatch. Already fixed in `client/src/index.tsx` — make sure imports come from `@apollo/client`. |
-| `error:0308010C:digital envelope routines::unsupported` | Add `NODE_OPTIONS=--openssl-legacy-provider` to the `npm start` command. |
+| `error:0308010C:digital envelope routines::unsupported` | Use `npm start` (it passes `--openssl-legacy-provider`), not `npx react-scripts start`. |
 | `ECONNREFUSED 127.0.0.1:5432` on server start | Postgres isn't running. `brew services start postgresql@14`. |
 | `password authentication failed for user "postgres"` | Create the role: `psql -d postgres -c "CREATE ROLE postgres WITH LOGIN SUPERUSER PASSWORD 'postgres';"`. |
 | Dev server stuck on `Failed to compile` | TS errors are fatal without `TSC_COMPILE_ON_ERROR=true`. Re-export it and restart. |
-| `npx npm-force-resolutions` hangs | Needs network. Or remove it from `server/package.json`'s `preinstall` if you don't need the `minimist` resolution. |
 
 ## Restart cheat-sheet
 
@@ -110,5 +104,5 @@ ESLINT_NO_DEV_ERRORS=true
 cd server && npm run dev
 
 # terminal 2
-cd client && NODE_OPTIONS=--openssl-legacy-provider TSC_COMPILE_ON_ERROR=true ESLINT_NO_DEV_ERRORS=true npm start
+cd client && TSC_COMPILE_ON_ERROR=true ESLINT_NO_DEV_ERRORS=true npm start
 ```
