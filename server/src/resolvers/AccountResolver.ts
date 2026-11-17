@@ -87,7 +87,7 @@ export class AccountResolver {
 	@UseMiddleware(isAuth)
 	async addMoney(
 		@Arg("amount") amount: number,
-		@Arg("currency") currency: string,
+		@Arg("id", () => Int) id: number,
 		@Ctx() { payload }: MyContext
 	): Promise<AccountResponse | null> {
 		if (!payload) {
@@ -102,7 +102,7 @@ export class AccountResolver {
 
 		if (owner) {
 			const account: Account | undefined = await Account.findOne({
-				where: { owner: owner, currency: currency },
+				where: { id: id, owner: owner },
 			});
 
 			// If an account for the specified owner exists, add money and update the account balance
@@ -118,7 +118,7 @@ export class AccountResolver {
 		// Return the updated account
 		try {
 			const updatedAccount: Account | undefined = await Account.findOne({
-				where: { owner: owner, currency: currency },
+				where: { id: id, owner: owner },
 			});
 
 			if (updatedAccount) {
@@ -143,8 +143,8 @@ export class AccountResolver {
 	@Mutation(() => AccountResponse)
 	@UseMiddleware(isAuth)
 	async exchange(
-		@Arg("selectedAccountCurrency") selectedAccountCurrency: string,
-		@Arg("toAccountCurrency") toAccountCurrency: string,
+		@Arg("selectedAccountId", () => Int) selectedAccountId: number,
+		@Arg("toAccountId", () => Int) toAccountId: number,
 		@Arg("amount") amount: number,
 		@Ctx() { payload }: MyContext
 	): Promise<AccountResponse | null> {
@@ -156,20 +156,19 @@ export class AccountResolver {
 
 		if (owner) {
 			const currentAccount: Account | undefined = await Account.findOne({
-				where: { owner: owner, currency: selectedAccountCurrency },
+				where: { id: selectedAccountId, owner: owner },
 			});
 
 			if (currentAccount) {
 				if (currentAccount.balance >= amount) {
 					// Exchange the amount to the other account
 					const toAccount: Account | undefined = await Account.findOne({
-						where: {
-							owner: owner,
-							currency: toAccountCurrency,
-						},
+						where: { id: toAccountId, owner: owner },
 					});
 
 					if (toAccount) {
+						const selectedAccountCurrency: string = currentAccount.currency;
+						const toAccountCurrency: string = toAccount.currency;
 						try {
 							let amountWithConversion: number = 0;
 
@@ -214,7 +213,7 @@ export class AccountResolver {
 
 		try {
 			const updatedAccount = await Account.findOne({
-				where: { owner: owner, currency: selectedAccountCurrency },
+				where: { id: selectedAccountId, owner: owner },
 			});
 
 			if (updatedAccount) {
@@ -270,13 +269,13 @@ export class AccountResolver {
 	}
 
 	/**
-	 * Mutation for deleting a specified currency account
-	 * @param currency
+	 * Mutation for deleting one of the authenticated user's accounts by id
+	 * @param id
 	 * @param param1
 	 */
 	@Mutation(() => Boolean)
 	@UseMiddleware(isAuth)
-	async deleteAccount(@Arg("currency") currency: string, @Ctx() { payload }: MyContext) {
+	async deleteAccount(@Arg("id", () => Int) id: number, @Ctx() { payload }: MyContext) {
 		if (!payload) {
 			return false;
 		}
@@ -285,7 +284,7 @@ export class AccountResolver {
 
 		if (owner) {
 			const account: Account | undefined = await Account.findOne({
-				where: { owner: owner, currency: currency },
+				where: { id: id, owner: owner },
 			});
 
 			// If the account exists, only allow the removal of an account if the user has no debt or if the users account is empty

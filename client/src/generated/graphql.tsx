@@ -93,15 +93,15 @@ export type MutationUpdatePasswordArgs = {
 
 
 export type MutationAddMoneyArgs = {
-  currency: Scalars['String'],
+  id: Scalars['Int'],
   amount: Scalars['Float']
 };
 
 
 export type MutationExchangeArgs = {
   amount: Scalars['Float'],
-  toAccountCurrency: Scalars['String'],
-  selectedAccountCurrency: Scalars['String']
+  toAccountId: Scalars['Int'],
+  selectedAccountId: Scalars['Int']
 };
 
 
@@ -111,12 +111,12 @@ export type MutationCreateAccountArgs = {
 
 
 export type MutationDeleteAccountArgs = {
-  currency: Scalars['String']
+  id: Scalars['Int']
 };
 
 
 export type MutationCreateTransactionArgs = {
-  currency: Scalars['String']
+  id: Scalars['Int']
 };
 
 export type Query = {
@@ -186,7 +186,7 @@ export type AccountsQuery = (
 
 export type AddMoneyMutationVariables = {
   amount: Scalars['Float'],
-  currency: Scalars['String']
+  id: Scalars['Int']
 };
 
 
@@ -232,7 +232,7 @@ export type CreateCardMutation = (
 );
 
 export type CreateTransactionMutationVariables = {
-  currency: Scalars['String']
+  id: Scalars['Int']
 };
 
 
@@ -242,7 +242,7 @@ export type CreateTransactionMutation = (
 );
 
 export type DeleteAccountMutationVariables = {
-  currency: Scalars['String']
+  id: Scalars['Int']
 };
 
 
@@ -260,8 +260,8 @@ export type DestroyAccountMutation = (
 );
 
 export type ExchangeMutationVariables = {
-  selectedAccountCurrency: Scalars['String'],
-  toAccountCurrency: Scalars['String'],
+  selectedAccountId: Scalars['Int'],
+  toAccountId: Scalars['Int'],
   amount: Scalars['Float']
 };
 
@@ -431,8 +431,8 @@ export type AccountsQueryHookResult = ReturnType<typeof useAccountsQuery>;
 export type AccountsLazyQueryHookResult = ReturnType<typeof useAccountsLazyQuery>;
 export type AccountsQueryResult = ApolloReactCommon.QueryResult<AccountsQuery, AccountsQueryVariables>;
 export const AddMoneyDocument = gql`
-    mutation AddMoney($amount: Float!, $currency: String!) {
-  addMoney(amount: $amount, currency: $currency) {
+    mutation AddMoney($amount: Float!, $id: Int!) {
+  addMoney(amount: $amount, id: $id) {
     account {
       id
       balance
@@ -457,7 +457,7 @@ export type AddMoneyMutationFn = ApolloReactCommon.MutationFunction<AddMoneyMuta
  * const [addMoneyMutation, { data, loading, error }] = useAddMoneyMutation({
  *   variables: {
  *      amount: // value for 'amount'
- *      currency: // value for 'currency'
+ *      id: // value for 'id'
  *   },
  * });
  */
@@ -564,8 +564,8 @@ export type CreateCardMutationHookResult = ReturnType<typeof useCreateCardMutati
 export type CreateCardMutationResult = ApolloReactCommon.MutationResult<CreateCardMutation>;
 export type CreateCardMutationOptions = ApolloReactCommon.BaseMutationOptions<CreateCardMutation, CreateCardMutationVariables>;
 export const CreateTransactionDocument = gql`
-    mutation CreateTransaction($currency: String!) {
-  createTransaction(currency: $currency)
+    mutation CreateTransaction($id: Int!) {
+  createTransaction(id: $id)
 }
     `;
 export type CreateTransactionMutationFn = ApolloReactCommon.MutationFunction<CreateTransactionMutation, CreateTransactionMutationVariables>;
@@ -583,7 +583,7 @@ export type CreateTransactionMutationFn = ApolloReactCommon.MutationFunction<Cre
  * @example
  * const [createTransactionMutation, { data, loading, error }] = useCreateTransactionMutation({
  *   variables: {
- *      currency: // value for 'currency'
+ *      id: // value for 'id'
  *   },
  * });
  */
@@ -594,8 +594,8 @@ export type CreateTransactionMutationHookResult = ReturnType<typeof useCreateTra
 export type CreateTransactionMutationResult = ApolloReactCommon.MutationResult<CreateTransactionMutation>;
 export type CreateTransactionMutationOptions = ApolloReactCommon.BaseMutationOptions<CreateTransactionMutation, CreateTransactionMutationVariables>;
 export const DeleteAccountDocument = gql`
-    mutation DeleteAccount($currency: String!) {
-  deleteAccount(currency: $currency)
+    mutation DeleteAccount($id: Int!) {
+  deleteAccount(id: $id)
 }
     `;
 export type DeleteAccountMutationFn = ApolloReactCommon.MutationFunction<DeleteAccountMutation, DeleteAccountMutationVariables>;
@@ -613,7 +613,7 @@ export type DeleteAccountMutationFn = ApolloReactCommon.MutationFunction<DeleteA
  * @example
  * const [deleteAccountMutation, { data, loading, error }] = useDeleteAccountMutation({
  *   variables: {
- *      currency: // value for 'currency'
+ *      id: // value for 'id'
  *   },
  * });
  */
@@ -653,8 +653,8 @@ export type DestroyAccountMutationHookResult = ReturnType<typeof useDestroyAccou
 export type DestroyAccountMutationResult = ApolloReactCommon.MutationResult<DestroyAccountMutation>;
 export type DestroyAccountMutationOptions = ApolloReactCommon.BaseMutationOptions<DestroyAccountMutation, DestroyAccountMutationVariables>;
 export const ExchangeDocument = gql`
-    mutation Exchange($selectedAccountCurrency: String!, $toAccountCurrency: String!, $amount: Float!) {
-  exchange(selectedAccountCurrency: $selectedAccountCurrency, toAccountCurrency: $toAccountCurrency, amount: $amount) {
+    mutation Exchange($selectedAccountId: Int!, $toAccountId: Int!, $amount: Float!) {
+  exchange(selectedAccountId: $selectedAccountId, toAccountId: $toAccountId, amount: $amount) {
     account {
       id
       balance
@@ -678,8 +678,8 @@ export type ExchangeMutationFn = ApolloReactCommon.MutationFunction<ExchangeMuta
  * @example
  * const [exchangeMutation, { data, loading, error }] = useExchangeMutation({
  *   variables: {
- *      selectedAccountCurrency: // value for 'selectedAccountCurrency'
- *      toAccountCurrency: // value for 'toAccountCurrency'
+ *      selectedAccountId: // value for 'selectedAccountId'
+ *      toAccountId: // value for 'toAccountId'
  *      amount: // value for 'amount'
  *   },
  * });

@@ -46,7 +46,7 @@ describe("AccountResolver", () => {
 				givenAccounts(buildAccount(1, from, 1000), buildAccount(2, to, 500));
 
 				// Act
-				const result = await resolver.exchange(from, to, 100, buildContext("1"));
+				const result = await resolver.exchange(1, 2, 100, buildContext("1"));
 
 				// Assert
 				expect(update).toHaveBeenCalledWith({ id: 1 }, { balance: 900 });
@@ -55,12 +55,27 @@ describe("AccountResolver", () => {
 			}
 		);
 
+		it("loads the source and target accounts by id, scoped to the owner", async () => {
+			// Arrange
+			givenAccounts(buildAccount(1, "USD", 1000), buildAccount(3, "EUR", 500));
+
+			// Act
+			await resolver.exchange(1, 3, 100, buildContext("1"));
+
+			// Assert
+			const owner = expect.objectContaining({ id: 1 });
+			expect(Account.findOne).toHaveBeenNthCalledWith(1, { where: { id: 1, owner } });
+			expect(Account.findOne).toHaveBeenNthCalledWith(2, { where: { id: 3, owner } });
+			expect(update).toHaveBeenCalledWith({ id: 1 }, { balance: 900 });
+			expect(update).toHaveBeenCalledWith({ id: 3 }, { balance: 590 });
+		});
+
 		it("allows exchanging the whole balance even when the converted amount is larger", async () => {
 			// Arrange
 			givenAccounts(buildAccount(1, "EUR", 100), buildAccount(2, "USD", 0));
 
 			// Act
-			await resolver.exchange("EUR", "USD", 100, buildContext("1"));
+			await resolver.exchange(1, 2, 100, buildContext("1"));
 
 			// Assert
 			expect(update).toHaveBeenCalledWith({ id: 1 }, { balance: 0 });
@@ -72,7 +87,7 @@ describe("AccountResolver", () => {
 			givenAccounts(buildAccount(1, "EUR", 50), buildAccount(2, "USD", 0));
 
 			// Act
-			const call = resolver.exchange("EUR", "USD", 100, buildContext("1"));
+			const call = resolver.exchange(1, 2, 100, buildContext("1"));
 
 			// Assert
 			await expect(call).rejects.toThrow(ErrorMessages.EXCHANGE);
@@ -84,7 +99,7 @@ describe("AccountResolver", () => {
 			givenAccounts(buildAccount(1, "USD", 1000), buildAccount(2, "USD", 500));
 
 			// Act
-			const call = resolver.exchange("USD", "USD", 100, buildContext("1"));
+			const call = resolver.exchange(1, 2, 100, buildContext("1"));
 
 			// Assert
 			await expect(call).rejects.toThrow(ErrorMessages.EXCHANGE);
@@ -93,7 +108,7 @@ describe("AccountResolver", () => {
 
 		it("returns null when the request carries no payload", async () => {
 			// Act
-			const result = await resolver.exchange("EUR", "USD", 100, buildContext());
+			const result = await resolver.exchange(1, 2, 100, buildContext());
 
 			// Assert
 			expect(result).toBeNull();

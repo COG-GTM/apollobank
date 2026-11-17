@@ -48,7 +48,7 @@ export class TransactionResolver {
 	 */
 	@Mutation(() => Float)
 	@UseMiddleware(isAuth)
-	async createTransaction(@Arg("currency") currency: string, @Ctx() { payload }: MyContext) {
+	async createTransaction(@Arg("id", () => Int) id: number, @Ctx() { payload }: MyContext) {
 		if (!payload) {
 			return false;
 		}
@@ -57,7 +57,7 @@ export class TransactionResolver {
 
 		if (owner) {
 			const account: Account | undefined = await Account.findOne({
-				where: { owner: owner, currency: currency },
+				where: { id: id, owner: owner },
 			});
 
 			if (account) {
@@ -108,7 +108,7 @@ export class TransactionResolver {
 		}
 
 		// In order to update the total account balance, return the above updated Accounts balance
-		const updatedAccount = await Account.findOne({ where: { owner: owner, currency: currency } });
+		const updatedAccount = await Account.findOne({ where: { id: id, owner: owner } });
 
 		if (updatedAccount) {
 			return updatedAccount.balance;

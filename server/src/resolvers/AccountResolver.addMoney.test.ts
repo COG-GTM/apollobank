@@ -25,9 +25,12 @@ describe("AccountResolver.addMoney", () => {
 
 	it("adds a positive amount to the account balance", async () => {
 		// Act
-		const result = await resolver.addMoney(250, "EUR", buildContext("1"));
+		const result = await resolver.addMoney(250, 7, buildContext("1"));
 
 		// Assert
+		expect(Account.findOne).toHaveBeenCalledWith({
+			where: { id: 7, owner: expect.objectContaining({ id: 1 }) },
+		});
 		expect(update).toHaveBeenCalledWith({ id: 7 }, { balance: 1250 });
 		expect(result?.message).toBe(SuccessMessages.ADD_MONEY);
 	});
@@ -38,7 +41,7 @@ describe("AccountResolver.addMoney", () => {
 		["NaN", NaN],
 	])("rejects a %s amount without changing the balance", async (_label, amount) => {
 		// Act
-		const call = resolver.addMoney(amount, "EUR", buildContext("1"));
+		const call = resolver.addMoney(amount, 7, buildContext("1"));
 
 		// Assert
 		await expect(call).rejects.toThrow(ErrorMessages.ADD_MONEY_AMOUNT);
@@ -47,7 +50,7 @@ describe("AccountResolver.addMoney", () => {
 
 	it("returns null when the request carries no payload", async () => {
 		// Act
-		const result = await resolver.addMoney(250, "EUR", buildContext());
+		const result = await resolver.addMoney(250, 7, buildContext());
 
 		// Assert
 		expect(result).toBeNull();
