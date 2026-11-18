@@ -64,10 +64,10 @@ Server listens on `http://localhost:4000` (GraphQL at `/graphql`, playground ena
 cd client
 npm install
 
-NODE_OPTIONS=--openssl-legacy-provider \
 TSC_COMPILE_ON_ERROR=true \
 ESLINT_NO_DEV_ERRORS=true \
 npm start
+# on Node 17+ also prefix NODE_OPTIONS=--openssl-legacy-provider (Node 16 rejects it)
 ```
 
 App opens at `http://localhost:3000`.
@@ -84,7 +84,7 @@ TSC_COMPILE_ON_ERROR=true
 ESLINT_NO_DEV_ERRORS=true
 ```
 
-(`NODE_OPTIONS` must still be exported in the shell — CRA doesn't read it from `.env`.)
+(On Node 17+, `NODE_OPTIONS` must still be exported in the shell — CRA doesn't read it from `.env`.)
 
 ## 4. First-time use
 
