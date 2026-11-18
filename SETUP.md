@@ -4,12 +4,12 @@ Quick guide to run the stack locally on macOS.
 
 ## Prerequisites
 
-- **Node.js 18.x** (tested on 18.20). If you're on a newer Node, the `--openssl-legacy-provider` flag (used below) keeps `react-scripts@4` working.
+- **Node.js 16.x** (the client dev server and build also work on 14.x). With the committed `client/package-lock.json`, `react-scripts@4` fails on Node 18, 20 and 22 with `ERR_PACKAGE_PATH_NOT_EXPORTED` from `postcss-safe-parser`, even with `--openssl-legacy-provider`.
 - **npm 8+**
 - **PostgreSQL 14+** running on `localhost:5432`
 
 ```bash
-node -v        # v18.x
+node -v        # v16.x
 psql --version # 14+
 pg_isready     # accepting connections
 ```
@@ -44,7 +44,7 @@ TypeORM is configured with `synchronize: true`, so tables are created automatica
 
 ```bash
 cd server
-cp -n .env.example .env 2>/dev/null || true   # if you keep one; otherwise create .env manually:
+# there is no .env.example; create .env with the two JWT secrets:
 cat > .env <<'EOF'
 ACCESS_TOKEN_SECRET=apollobank-access-secret-local-dev
 REFRESH_TOKEN_SECRET=apollobank-refresh-secret-local-dev
@@ -74,7 +74,7 @@ App opens at `http://localhost:3000`.
 
 ### Why those env flags?
 
-- `NODE_OPTIONS=--openssl-legacy-provider` — `react-scripts@4` uses Webpack 4, whose hashing breaks on Node 17+ OpenSSL.
+- `NODE_OPTIONS=--openssl-legacy-provider` — `react-scripts@4` uses Webpack 4, whose hashing breaks on Node 17+ OpenSSL. Node 16 rejects this flag (`not allowed in NODE_OPTIONS`), so leave `NODE_OPTIONS` unset there. The root `npm start` always sets it, so on Node 16 run the server and client separately as shown in the cheat-sheet below.
 - `TSC_COMPILE_ON_ERROR=true` + `ESLINT_NO_DEV_ERRORS=true` — the codebase has pre-existing TS errors (Apollo v2→v3 migration leftovers); these flags let the dev server serve while warnings are reported.
 
 You can put these in `client/.env.development.local` to avoid prefixing every command:
@@ -97,6 +97,7 @@ ESLINT_NO_DEV_ERRORS=true
 | Symptom | Fix |
 |---|---|
 | Blank page, console: `Cannot read properties of undefined (reading 'bind')` in `useQuery.ts` | Apollo v2/v3 client mismatch. Already fixed in `client/src/index.tsx` — make sure imports come from `@apollo/client`. |
+| `ERR_PACKAGE_PATH_NOT_EXPORTED: Package subpath './lib/tokenize'` (`postcss-safe-parser`) | Node 18+ with the committed lockfile. Switch to Node 16 (`nvm use 16`). |
 | `error:0308010C:digital envelope routines::unsupported` | Add `NODE_OPTIONS=--openssl-legacy-provider` to the `npm start` command. |
 | `ECONNREFUSED 127.0.0.1:5432` on server start | Postgres isn't running. `brew services start postgresql@14`. |
 | `password authentication failed for user "postgres"` | Create the role: `psql -d postgres -c "CREATE ROLE postgres WITH LOGIN SUPERUSER PASSWORD 'postgres';"`. |
@@ -110,5 +111,5 @@ ESLINT_NO_DEV_ERRORS=true
 cd server && npm run dev
 
 # terminal 2
-cd client && NODE_OPTIONS=--openssl-legacy-provider TSC_COMPILE_ON_ERROR=true ESLINT_NO_DEV_ERRORS=true npm start
+cd client && TSC_COMPILE_ON_ERROR=true ESLINT_NO_DEV_ERRORS=true npm start   # Node 16; add NODE_OPTIONS=--openssl-legacy-provider on Node 17+
 ```
