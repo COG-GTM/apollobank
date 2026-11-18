@@ -1,0 +1,46 @@
+// Apollobank architecture (master). Render with ./render.sh
+digraph apollobank {
+  graph [rankdir=TB, fontname="DejaVu Sans", fontsize=18, nodesep=0.5, ranksep=0.7, pad=0.3,
+         label="Apollobank architecture (master)", labelloc=t];
+  node  [shape=box, style="rounded,filled", fontname="DejaVu Sans", fontsize=15, fillcolor=white, color="#555555"];
+  edge  [fontname="DejaVu Sans", fontsize=13, color="#444444"];
+
+  user [label="Browser user", shape=oval, fillcolor="#fff4d6"];
+
+  subgraph cluster_client {
+    label="client/  (React 17 + CRA 4, :3000)"; style="rounded,filled"; fillcolor="#e8f1fb"; color="#4a86c5";
+    routes [label="Routes.tsx\n/  /login  /register  /dashboard\n/accounts/:id  /settings  /bye"];
+    pages  [label="Pages + components\nDashboard (accounts, cards, spending chart)\nAccount (add money, exchange, transactions, delete)\nSettings (change password, destroy account)"];
+    hooks  [label="generated/graphql.tsx\nApollo hooks from src/graphql/*.graphql\n(graphql-codegen)"];
+    apollo [label="Apollo Client (index.tsx)\nTokenRefreshLink -> auth header link -> HttpLink"];
+    token  [label="utils/accessToken.ts\naccess token in memory"];
+    {rank=same; routes; pages}
+    {rank=same; hooks; apollo; token}
+  }
+
+  subgraph cluster_server {
+    label="server/  (Express + Apollo Server 2 + TypeGraphQL, :4000)"; style="rounded,filled"; fillcolor="#eaf6ea"; color="#4f9a55";
+    refresh [label="POST /refresh_token\nreads httpOnly 'jid' cookie,\nreturns new access token"];
+    gql     [label="/graphql  (Apollo Server,\nplayground + introspection on)"];
+    auth    [label="isAuth middleware\nverifies Bearer access JWT\n(ACCESS_TOKEN_SECRET, 15 min)"];
+    resolvers [label="Resolvers\nUserResolver: me, login, register, logout,\nupdatePassword, destroyAccount, revokeRefreshTokensForUser\nAccountResolver: accounts, account, addMoney, exchange,\ncreateAccount, deleteAccount\nTransactionResolver: transactions, createTransaction (faker)\nCardResolver: cards, createCard"];
+    orm     [label="TypeORM 0.2 entities\nUser, Account, Transaction, Card\n(synchronize: true)"];
+    seed    [label="src/seed.ts\n(npm run seed)", fillcolor="#f3f3f3"];
+    {rank=same; refresh; gql}
+  }
+
+  db [label="PostgreSQL\nexpressbank (dev, ormconfig.json)\nDATABASE_URL (production)", shape=cylinder, fillcolor="#fdeaea", color="#bb5555"];
+
+  user -> routes;
+  routes -> pages;
+  pages -> hooks [label="useQuery /\nuseMutation"];
+  hooks -> apollo [constraint=false];
+  token -> apollo [dir=both, style=dashed, label="read / store"];
+  apollo -> gql [label="GraphQL over HTTP\nAuthorization: Bearer <token>\n(REACT_APP_SERVER_URL)"];
+  apollo -> refresh [label="on load + on expiry\n(credentials: include)", style=dashed];
+  gql -> auth -> resolvers;
+  resolvers -> orm;
+  refresh -> orm [style=dashed, label="User lookup"];
+  orm -> db;
+  seed -> orm [style=dotted];
+}
