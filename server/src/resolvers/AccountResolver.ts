@@ -16,6 +16,7 @@ import { User } from "../entity/User";
 import { Account } from "../entity/Account";
 import { createRandomSortCode, createRandomIbanCode } from "../utils/createRandom";
 import { SuccessMessages } from "../utils/messages";
+import { convertAmount } from "../utils/exchangeRates";
 
 @ObjectType()
 class AccountResponse {
@@ -147,6 +148,17 @@ export class AccountResolver {
 			return null;
 		}
 
+		const amountWithConversion: number | undefined = convertAmount(
+			amount,
+			selectedAccountCurrency,
+			toAccountCurrency
+		);
+
+		// Reject non-positive amounts and unsupported or same-currency pairs before touching any balance
+		if (!(amount > 0) || amountWithConversion === undefined) {
+			throw new Error(ErrorMessages.EXCHANGE_INVALID);
+		}
+
 		const owner: User | undefined = await User.findOne({ where: { id: payload.userId } });
 
 		if (owner) {
@@ -166,36 +178,15 @@ export class AccountResolver {
 
 					if (toAccount) {
 						try {
-							let amountWithConversion: number = 0;
-
-							// Apply conversion rates for each currency
-							if (selectedAccountCurrency === "EUR" && toAccountCurrency === "USD") {
-								amountWithConversion = amount * 1.11;
-							} else if (selectedAccountCurrency === "EUR" && toAccountCurrency === "GBP") {
-								amountWithConversion = amount * 0.89;
-							} else if (selectedAccountCurrency === "USD" && toAccountCurrency === "EUR") {
-								amountWithConversion = amount * 0.9;
-							} else if (selectedAccountCurrency === "USD" && toAccountCurrency === "GBP") {
-								amountWithConversion = amount * 0.8;
-							} else if (selectedAccountCurrency === "GBP" && toAccountCurrency === "USD") {
-								amountWithConversion = amount * 1.25;
-							} else if (selectedAccountCurrency === "GBP" && toAccountCurrency === "EUR") {
-								amountWithConversion = amount * 1.13;
-							}
-
-							// Only update the account balances if the current accounts balance doesn't fall below 0 after applying conversion rates
-							if (currentAccount.balance - Math.round(amountWithConversion) >= 0) {
-								await Account.update(
-									{ id: toAccount.id },
-									{ balance: toAccount.balance + Math.round(amountWithConversion) }
-								);
-								await Account.update(
-									{ id: currentAccount.id },
-									{ balance: currentAccount.balance - Math.round(amountWithConversion) }
-								);
-							} else {
-								throw new Error(ErrorMessages.EXCHANGE);
-							}
+							// Credit the converted amount and debit exactly the amount entered
+							await Account.update(
+								{ id: toAccount.id },
+								{ balance: toAccount.balance + amountWithConversion }
+							);
+							await Account.update(
+								{ id: currentAccount.id },
+								{ balance: currentAccount.balance - amount }
+							);
 						} catch (error) {
 							console.log(error);
 							throw new Error(ErrorMessages.EXCHANGE);
