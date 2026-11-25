@@ -101,10 +101,14 @@ export class AccountResolver {
 			throw topUpError(ErrorMessages.ADD_MONEY_INVALID_AMOUNT, TopUpErrorCodes.INVALID_AMOUNT);
 		}
 
-		const owner: User | undefined = await User.findOne({ where: { id: payload.userId } });
-		const account: Account | undefined = owner
-			? await Account.findOne({ where: { owner: owner, currency: currency } })
-			: undefined;
+		let owner: User | undefined;
+		let account: Account | undefined;
+		try {
+			owner = await User.findOne({ where: { id: payload.userId } });
+			account = owner ? await Account.findOne({ where: { owner: owner, currency: currency } }) : undefined;
+		} catch (err) {
+			throw topUpError(ErrorMessages.ADD_MONEY, TopUpErrorCodes.FAILED);
+		}
 
 		if (!account) {
 			throw topUpError(ErrorMessages.ADD_MONEY_NO_ACCOUNT, TopUpErrorCodes.ACCOUNT_NOT_FOUND);

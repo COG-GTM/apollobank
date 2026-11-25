@@ -319,4 +319,23 @@ describe("AccountResolver.addMoney with TOP_UP_ERROR_CODES on", () => {
 		// Assert
 		await expect(result).rejects.toMatchObject({ message, extensions: { code } });
 	});
+
+	it.each([
+		["user", () => jest.spyOn(User, "findOne").mockRejectedValue(new Error("db down"))],
+		["account", () => jest.spyOn(Account, "findOne").mockRejectedValue(new Error("db down"))],
+	])("rejects with TOP_UP_FAILED when the %s lookup fails", async (_label, failLookup) => {
+		// Arrange
+		const { update } = mockAccounts([makeAccount(1, "EUR", 1000)]);
+		failLookup();
+
+		// Act
+		const result = new AccountResolver().addMoney(100, "EUR", context);
+
+		// Assert
+		await expect(result).rejects.toMatchObject({
+			message: ErrorMessages.ADD_MONEY,
+			extensions: { code: "TOP_UP_FAILED" },
+		});
+		expect(update).not.toHaveBeenCalled();
+	});
 });
