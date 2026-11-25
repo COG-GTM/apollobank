@@ -16,6 +16,8 @@ import { User } from "../entity/User";
 import { Account } from "../entity/Account";
 import { createRandomSortCode, createRandomIbanCode } from "../utils/createRandom";
 import { SuccessMessages } from "../utils/messages";
+import { addMoneySchema } from "../utils/validation";
+import { topUpError, TopUpErrorCodes } from "../utils/topUpError";
 import { convertAmount } from "../utils/exchangeRates";
 
 @ObjectType()
@@ -94,39 +96,40 @@ export class AccountResolver {
 			return null;
 		}
 
-		const owner: User | undefined = await User.findOne({ where: { id: payload.userId } });
-
-		if (owner) {
-			const account: Account | undefined = await Account.findOne({
-				where: { owner: owner, currency: currency },
-			});
-
-			// If an account for the specified owner exists, add money and update the account balance
-			if (account) {
-				try {
-					await Account.update({ id: account.id }, { balance: account.balance + amount });
-				} catch (err) {
-					throw new Error(ErrorMessages.ADD_MONEY);
-				}
-			}
+		const { error } = addMoneySchema.validate({ amount });
+		if (error) {
+			throw topUpError(ErrorMessages.ADD_MONEY_INVALID_AMOUNT, TopUpErrorCodes.INVALID_AMOUNT);
 		}
 
-		// Return the updated account
+		let owner: User | undefined;
+		let account: Account | undefined;
 		try {
-			const updatedAccount: Account | undefined = await Account.findOne({
-				where: { owner: owner, currency: currency },
-			});
-
-			if (updatedAccount) {
-				return {
-					account: updatedAccount,
-					message: SuccessMessages.ADD_MONEY,
-				};
-			}
-		} catch (error) {
-			throw new Error(ErrorMessages.ADD_MONEY);
+			owner = await User.findOne({ where: { id: payload.userId } });
+			account = owner ? await Account.findOne({ where: { owner: owner, currency: currency } }) : undefined;
+		} catch (err) {
+			throw topUpError(ErrorMessages.ADD_MONEY, TopUpErrorCodes.FAILED);
 		}
-		return null;
+
+		if (!account) {
+			throw topUpError(ErrorMessages.ADD_MONEY_NO_ACCOUNT, TopUpErrorCodes.ACCOUNT_NOT_FOUND);
+		}
+
+		let updatedAccount: Account | undefined;
+		try {
+			await Account.update({ id: account.id }, { balance: account.balance + amount });
+			updatedAccount = await Account.findOne({ where: { owner: owner, currency: currency } });
+		} catch (err) {
+			throw topUpError(ErrorMessages.ADD_MONEY, TopUpErrorCodes.FAILED);
+		}
+
+		if (!updatedAccount) {
+			throw topUpError(ErrorMessages.ADD_MONEY, TopUpErrorCodes.FAILED);
+		}
+
+		return {
+			account: updatedAccount,
+			message: SuccessMessages.ADD_MONEY,
+		};
 	}
 
 	/**

@@ -15,3 +15,7 @@ export const changePasswordSchema = Joi.object({
 	oldPassword: Joi.string(),
 	newPassword: Joi.string().pattern(new RegExp("^[a-zA-Z0-9]{3,30}$")).min(6).required(),
 });
+
+export const addMoneySchema = Joi.object({
+	amount: Joi.number().integer().positive().required(),
+});

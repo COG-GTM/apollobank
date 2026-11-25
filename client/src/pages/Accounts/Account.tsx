@@ -187,8 +187,8 @@ export const Account: React.FC = () => {
                                     resetForm();
                                 }
                             } catch (error) {
-                                const errorMessage = (error as Error).message.split(':')[1];
-                                setErrorMessage(errorMessage);
+                                const { message } = error as Error;
+                                setErrorMessage(message.includes(':') ? message.split(':')[1] : message);
                                 setSubmitting(false);
                             }
                         }}
