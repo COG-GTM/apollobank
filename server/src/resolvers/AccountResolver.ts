@@ -16,6 +16,8 @@ import { User } from "../entity/User";
 import { Account } from "../entity/Account";
 import { createRandomSortCode, createRandomIbanCode } from "../utils/createRandom";
 import { SuccessMessages } from "../utils/messages";
+import { addMoneySchema } from "../utils/validation";
+import { topUpError, TopUpErrorCodes } from "../utils/topUpError";
 import { convertAmount } from "../utils/exchangeRates";
 
 @ObjectType()
@@ -94,39 +96,36 @@ export class AccountResolver {
 			return null;
 		}
 
+		const { error } = addMoneySchema.validate({ amount });
+		if (error) {
+			throw topUpError(ErrorMessages.ADD_MONEY_INVALID_AMOUNT, TopUpErrorCodes.INVALID_AMOUNT);
+		}
+
 		const owner: User | undefined = await User.findOne({ where: { id: payload.userId } });
+		const account: Account | undefined = owner
+			? await Account.findOne({ where: { owner: owner, currency: currency } })
+			: undefined;
 
-		if (owner) {
-			const account: Account | undefined = await Account.findOne({
-				where: { owner: owner, currency: currency },
-			});
-
-			// If an account for the specified owner exists, add money and update the account balance
-			if (account) {
-				try {
-					await Account.update({ id: account.id }, { balance: account.balance + amount });
-				} catch (err) {
-					throw new Error(ErrorMessages.ADD_MONEY);
-				}
-			}
+		if (!account) {
+			throw topUpError(ErrorMessages.ADD_MONEY_NO_ACCOUNT, TopUpErrorCodes.ACCOUNT_NOT_FOUND);
 		}
 
-		// Return the updated account
+		let updatedAccount: Account | undefined;
 		try {
-			const updatedAccount: Account | undefined = await Account.findOne({
-				where: { owner: owner, currency: currency },
-			});
-
-			if (updatedAccount) {
-				return {
-					account: updatedAccount,
-					message: SuccessMessages.ADD_MONEY,
-				};
-			}
-		} catch (error) {
-			throw new Error(ErrorMessages.ADD_MONEY);
+			await Account.update({ id: account.id }, { balance: account.balance + amount });
+			updatedAccount = await Account.findOne({ where: { owner: owner, currency: currency } });
+		} catch (err) {
+			throw topUpError(ErrorMessages.ADD_MONEY, TopUpErrorCodes.FAILED);
 		}
-		return null;
+
+		if (!updatedAccount) {
+			throw topUpError(ErrorMessages.ADD_MONEY, TopUpErrorCodes.FAILED);
+		}
+
+		return {
+			account: updatedAccount,
+			message: SuccessMessages.ADD_MONEY,
+		};
 	}
 
 	/**

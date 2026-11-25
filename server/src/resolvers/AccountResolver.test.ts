@@ -188,3 +188,135 @@ describe("AccountResolver.exchange", () => {
 		expect(update).not.toHaveBeenCalled();
 	});
 });
+
+describe("AccountResolver.addMoney", () => {
+	let resolver: AccountResolver;
+	let eur: Account;
+
+	beforeEach(() => {
+		resolver = new AccountResolver();
+		eur = makeAccount(1, "EUR", 1000);
+	});
+
+	afterEach(() => {
+		jest.restoreAllMocks();
+	});
+
+	it("adds a positive whole amount and returns the success message", async () => {
+		// Arrange
+		mockAccounts([eur]);
+
+		// Act
+		const response = await resolver.addMoney(250, "EUR", context);
+
+		// Assert
+		expect(eur.balance).toBe(1250);
+		expect(response).toEqual({
+			account: expect.objectContaining({ currency: "EUR", balance: 1250 }),
+			message: SuccessMessages.ADD_MONEY,
+		});
+	});
+
+	it.each([
+		["zero", 0],
+		["negative", -500],
+		["fractional", 10.5],
+		["NaN", NaN],
+		["Infinity", Infinity],
+	])("rejects a %s amount without reading or updating the account", async (_label, amount) => {
+		// Arrange
+		const { findOne, update } = mockAccounts([eur]);
+
+		// Act
+		const result = resolver.addMoney(amount, "EUR", context);
+
+		// Assert
+		await expect(result).rejects.toThrow(ErrorMessages.ADD_MONEY_INVALID_AMOUNT);
+		expect(findOne).not.toHaveBeenCalled();
+		expect(update).not.toHaveBeenCalled();
+		expect(eur.balance).toBe(1000);
+	});
+
+	it("rejects when the user has no account in the currency", async () => {
+		// Arrange
+		const { update } = mockAccounts([eur]);
+
+		// Act
+		const result = resolver.addMoney(100, "USD", context);
+
+		// Assert
+		await expect(result).rejects.toThrow(ErrorMessages.ADD_MONEY_NO_ACCOUNT);
+		expect(update).not.toHaveBeenCalled();
+	});
+
+	it("rejects when the user no longer exists", async () => {
+		// Arrange
+		const { findOne, update } = mockAccounts([eur]);
+		jest.spyOn(User, "findOne").mockResolvedValue(undefined);
+
+		// Act
+		const result = resolver.addMoney(100, "EUR", context);
+
+		// Assert
+		await expect(result).rejects.toThrow(ErrorMessages.ADD_MONEY_NO_ACCOUNT);
+		expect(findOne).not.toHaveBeenCalled();
+		expect(update).not.toHaveBeenCalled();
+	});
+
+	it("throws the top-up error when the balance update fails", async () => {
+		// Arrange
+		const { update } = mockAccounts([eur]);
+		update.mockRejectedValue(new Error("db down"));
+
+		// Act
+		const result = resolver.addMoney(100, "EUR", context);
+
+		// Assert
+		await expect(result).rejects.toThrow(ErrorMessages.ADD_MONEY);
+	});
+
+	it("throws the top-up error when the updated account cannot be read back", async () => {
+		// Arrange
+		const { findOne } = mockAccounts([eur]);
+		findOne.mockResolvedValueOnce({ ...eur } as Account).mockResolvedValueOnce(undefined);
+
+		// Act
+		const result = resolver.addMoney(100, "EUR", context);
+
+		// Assert
+		await expect(result).rejects.toThrow(ErrorMessages.ADD_MONEY);
+	});
+
+	it("returns null without a payload", async () => {
+		// Act
+		const response = await resolver.addMoney(100, "EUR", {} as MyContext);
+
+		// Assert
+		expect(response).toBeNull();
+	});
+});
+
+describe("AccountResolver.addMoney with TOP_UP_ERROR_CODES on", () => {
+	beforeEach(() => {
+		process.env.TOP_UP_ERROR_CODES = "true";
+	});
+
+	afterEach(() => {
+		delete process.env.TOP_UP_ERROR_CODES;
+		jest.restoreAllMocks();
+	});
+
+	it.each([
+		[-500, "EUR", "TOP_UP_INVALID_AMOUNT", ErrorMessages.ADD_MONEY_INVALID_AMOUNT],
+		[100, "USD", "TOP_UP_ACCOUNT_NOT_FOUND", ErrorMessages.ADD_MONEY_NO_ACCOUNT],
+	])("rejects %p %s with code %s and the unchanged message", async (amount, currency, code, message) => {
+		// Arrange
+		mockAccounts([makeAccount(1, "EUR", 1000)]);
+
+		// Act
+		const result = new AccountResolver().addMoney(amount, currency, context);
+
+		// Assert
+		await expect(result).rejects.toMatchObject({ message, extensions: { code } });
+	});
+});
