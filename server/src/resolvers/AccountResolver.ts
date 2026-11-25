@@ -154,8 +154,8 @@ export class AccountResolver {
 			toAccountCurrency
 		);
 
-		// Reject non-positive amounts and unsupported or same-currency pairs before touching any balance
-		if (!(amount > 0) || amountWithConversion === undefined) {
+		// Balances are whole units: reject non-positive or fractional amounts and unsupported or same-currency pairs before touching any balance
+		if (!Number.isInteger(amount) || amount <= 0 || amountWithConversion === undefined) {
 			throw new Error(ErrorMessages.EXCHANGE_INVALID);
 		}
 

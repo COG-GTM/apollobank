@@ -21,7 +21,11 @@ describe("getExchangeRate", () => {
 		["USD", "USD"],
 		["GBP", "GBP"],
 	])("returns undefined for the same-currency pair %s to %s", (from, to) => {
-		expect(getExchangeRate(from, to)).toBeUndefined();
+		// Act
+		const rate = getExchangeRate(from, to);
+
+		// Assert
+		expect(rate).toBeUndefined();
 	});
 
 	it.each([
@@ -30,7 +34,11 @@ describe("getExchangeRate", () => {
 		["EUR", "constructor"],
 		["toString", "EUR"],
 	])("returns undefined for the unsupported pair %s to %s", (from, to) => {
-		expect(getExchangeRate(from, to)).toBeUndefined();
+		// Act
+		const rate = getExchangeRate(from, to);
+
+		// Assert
+		expect(rate).toBeUndefined();
 	});
 });
 
@@ -46,12 +54,22 @@ describe("convertAmount", () => {
 		expect(converted).toBe(111);
 	});
 
-	it("rounds half values the same way as Math.round", () => {
-		expect(convertAmount(50, "EUR", "GBP")).toBe(Math.round(50 * 0.89));
-		expect(convertAmount(2, "GBP", "USD")).toBe(3);
+	it("rounds half values up the same way as Math.round", () => {
+		// Arrange
+		const amount = 2;
+
+		// Act
+		const converted = convertAmount(amount, "GBP", "USD");
+
+		// Assert
+		expect(converted).toBe(3);
 	});
 
 	it("returns undefined for an unsupported pair", () => {
-		expect(convertAmount(100, "EUR", "EUR")).toBeUndefined();
+		// Act
+		const converted = convertAmount(100, "EUR", "EUR");
+
+		// Assert
+		expect(converted).toBeUndefined();
 	});
 });

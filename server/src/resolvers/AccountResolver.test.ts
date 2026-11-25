@@ -136,7 +136,7 @@ describe("AccountResolver.exchange", () => {
 		expect(eur.balance).toBe(1000);
 	});
 
-	it.each([0, -50, NaN])("rejects an amount of %d and leaves both balances", async (amount) => {
+	it.each([0, -50, NaN, 10.5])("rejects an amount of %d and leaves both balances", async (amount) => {
 		// Arrange
 		const { update } = mockAccounts([eur, usd, gbp]);
 
