@@ -3,9 +3,9 @@ import { render, screen } from '@testing-library/react';
 import { Transactions } from './Transactions';
 import { TransactionsQuery } from '../../../generated/graphql';
 
-const makeAccount = (
-    transactions: TransactionsQuery['transactions'],
-): TransactionsQuery => ({ transactions });
+const makeAccount = (transactions: TransactionsQuery['transactions']): TransactionsQuery => ({
+    transactions,
+});
 
 describe('Transactions', () => {
     it('renders transactions newest first, whatever order they arrive in', () => {
