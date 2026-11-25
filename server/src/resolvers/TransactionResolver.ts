@@ -9,7 +9,7 @@ import faker from "faker";
 @Resolver()
 export class TransactionResolver {
 	/**
-	 * Query for returning all transactions for an authenticated users currency account
+	 * Query for returning all transactions for an authenticated users currency account, newest first
 	 * @param currency
 	 * @param param1
 	 */
@@ -28,7 +28,10 @@ export class TransactionResolver {
 			});
 
 			if (account) {
-				return Transaction.find({ where: { account: account } });
+				return Transaction.find({
+					where: { account: account },
+					order: { date: "DESC", id: "DESC" },
+				});
 			}
 		}
 

@@ -32,15 +32,17 @@ export const Chart: React.FC<ChartProps> = ({ currency }) => {
                     <AreaChart
                         data={
                             !!data
-                                ? data.transactions.map((transaction: Transaction) => {
-                                      return {
-                                          date: new Date(
-                                              Date.parse(transaction.date),
-                                          ).toLocaleDateString(),
-                                          type: transaction.transactionType,
-                                          amount: transaction.amount,
-                                      };
-                                  })
+                                ? [...data.transactions]
+                                      .sort((a, b) => Date.parse(a.date) - Date.parse(b.date))
+                                      .map((transaction: Transaction) => {
+                                          return {
+                                              date: new Date(
+                                                  Date.parse(transaction.date),
+                                              ).toLocaleDateString(),
+                                              type: transaction.transactionType,
+                                              amount: transaction.amount,
+                                          };
+                                      })
                                 : []
                         }
                         margin={{

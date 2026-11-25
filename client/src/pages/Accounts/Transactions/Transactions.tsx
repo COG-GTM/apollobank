@@ -21,13 +21,17 @@ export const Transactions: React.FC<TransactionProps> = ({ account, cardNumber, 
         return <Loading />;
     }
 
+    const transactions = [...account.transactions].sort(
+        (a, b) => Date.parse(b.date) - Date.parse(a.date),
+    );
+
     return (
         <div>
             <div className={classes.transactions}>
                 <div className={classes.transactionsHeader}></div>
                 <div className={classes.transactionCards}>
-                    {account.transactions.length > 0 &&
-                        account.transactions.map((transaction: Transaction) => {
+                    {transactions.length > 0 &&
+                        transactions.map((transaction: Transaction) => {
                             let transactionIcon: any;
 
                             switch (transaction.transactionType) {
